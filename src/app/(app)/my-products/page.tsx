@@ -264,12 +264,23 @@ const MyProductsPage = () => {
                     Edit
                   </Link>
                   <button
+                    onClick={() => handleToggleAvailability(product)}
+                    disabled={togglingId === product._id}
+                    title={product.isAvailable ? "Mark as unavailable" : "Mark as available"}
+                    className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border text-sm font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${
+                      product.isAvailable
+                        ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20"
+                        : "bg-white/5 border-white/10 text-white/50 hover:bg-white/10"
+                    }`}
+                  >
+                    {product.isAvailable ? <ToggleRight className="w-4 h-4" /> : <ToggleLeft className="w-4 h-4" />}
+                  </button>
+                  <button
                     onClick={() => handleDelete(product._id)}
                     disabled={deletingId === product._id}
-                    className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-white/5 border border-white/10 text-sm font-medium text-white/70 hover:bg-red-500/10 hover:border-red-500/30 hover:text-red-400 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-sm font-medium text-white/70 hover:bg-red-500/10 hover:border-red-500/30 hover:text-red-400 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
-                    {deletingId === product._id ? "Deleting…" : "Delete"}
                   </button>
                 </div>
               </div>

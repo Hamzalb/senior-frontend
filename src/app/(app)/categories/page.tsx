@@ -3,9 +3,11 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import SectionBackground from "@/components/SectionBackground";
+import { Search } from "lucide-react";
 
 const Categories = () => {
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -67,8 +69,11 @@ const Categories = () => {
       link: "/categories/other",
     },
 
-    // Add more categories as needed
   ];
+
+  const filtered = search.trim()
+    ? categories.filter((c) => c.name.toLowerCase().includes(search.toLowerCase()) || c.description.toLowerCase().includes(search.toLowerCase()))
+    : categories;
 
   return (
     <div className="relative min-h-screen bg-surface py-20 px-4 sm:px-6 md:px-12 overflow-hidden">
@@ -88,11 +93,25 @@ const Categories = () => {
             Browse our wide selection of products organized by category to
             easily find what you're looking for to trade.
           </p>
+          {/* Search */}
+          <div className="relative w-full max-w-md mx-auto mt-4">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search categories..."
+              className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/10 border border-white/15 text-white placeholder:text-white/40 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/50 transition-all"
+            />
+          </div>
         </div>
 
         {/* Category Cards */}
+        {filtered.length === 0 && (
+          <p className="text-white/40 text-center py-12">No categories match "{search}"</p>
+        )}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 lg:gap-10 px-2 sm:px-0 py-8 sm:py-12 items-stretch">
-          {categories.map((category) => (
+          {filtered.map((category) => (
             <Link
               href={category.link}
               key={category.name}
