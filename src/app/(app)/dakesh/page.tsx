@@ -9,6 +9,7 @@ import Link from "next/link";
 import { getImageSrc } from "@/lib/getImageSrc";
 import { motion } from "framer-motion";
 import { CheckCircle, MessageCircle, Home, ArrowLeft } from "lucide-react";
+import { sendMessage } from "@/lib/messageService";
 
 type Product = {
   _id: string;
@@ -275,11 +276,25 @@ function DakeshContent() {
       // Success - show success message with barter data
       if (mountedRef.current) {
         if (res.data?.barter) {
-          setBarterData(res.data.barter);
+          const barter = res.data.barter;
+          setBarterData(barter);
           setBarterInitiated(true);
           setSelectedProductToOffer(null);
+
+          // Send a trade_request message in chat so the owner sees it immediately
+          try {
+            await sendMessage({
+              recipientId: barter.requestedFrom._id,
+              content: `I want to trade my "${barter.productOfferedId?.title}" for your "${barter.productRequestedId?.title}"`,
+              messageType: "trade_request",
+              offeredProductId: barter.productOfferedId?._id,
+              requestedProductId: barter.productRequestedId?._id,
+              barterId: barter._id,
+            }, Cookies.get("token") || "");
+          } catch (err) {
+            console.error("Failed to send trade message to chat:", err);
+          }
         } else {
-          // Still consider it success if barterId exists
           setBarterInitiated(true);
           setSelectedProductToOffer(null);
         }

@@ -642,17 +642,36 @@ export default function Chat({
                 </div>
               ) : (
                 <div className="space-y-6">
+                  {/* Category match notice */}
+                  {(selectedMyProduct || selectedRecipientProduct) && (
+                    <div className="px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs">
+                      Category locked to <span className="font-semibold">{selectedMyProduct?.category || selectedRecipientProduct?.category}</span> — only matching products are shown below.
+                    </div>
+                  )}
+
                   {/* Your product */}
                   <div>
                     <h3 className="text-sm font-semibold text-white/70 mb-3">Your Product (What you offer)</h3>
                     <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                       {myProducts.length === 0 ? (
                         <p className="text-white/50 col-span-full text-center py-4">You have no products available for trade</p>
-                      ) : (
-                        myProducts.map((product) => (
+                      ) : (() => {
+                        const filtered = selectedRecipientProduct
+                          ? myProducts.filter(p => p.category === selectedRecipientProduct.category)
+                          : myProducts;
+                        return filtered.length === 0 ? (
+                          <p className="text-white/50 col-span-full text-center py-4">
+                            You have no <span className="text-amber-300">{selectedRecipientProduct?.category}</span> products to offer
+                          </p>
+                        ) : filtered.map((product) => (
                           <button
                             key={product._id}
-                            onClick={() => setSelectedMyProduct(product)}
+                            onClick={() => {
+                              setSelectedMyProduct(product);
+                              if (selectedRecipientProduct && selectedRecipientProduct.category !== product.category) {
+                                setSelectedRecipientProduct(null);
+                              }
+                            }}
                             className={`p-3 rounded-xl border transition-all ${
                               selectedMyProduct?._id === product._id
                                 ? "border-amber-500 bg-amber-500/20"
@@ -666,9 +685,10 @@ export default function Chat({
                               onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.svg'; }}
                             />
                             <p className="text-xs sm:text-sm text-white truncate">{product.title}</p>
+                            <p className="text-[10px] text-white/40 truncate">{product.category}</p>
                           </button>
-                        ))
-                      )}
+                        ));
+                      })()}
                     </div>
                   </div>
 
@@ -678,11 +698,23 @@ export default function Chat({
                     <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                       {recipientProducts.length === 0 ? (
                         <p className="text-white/50 col-span-full text-center py-4">This user has no products available for trade</p>
-                      ) : (
-                        recipientProducts.map((product) => (
+                      ) : (() => {
+                        const filtered = selectedMyProduct
+                          ? recipientProducts.filter(p => p.category === selectedMyProduct.category)
+                          : recipientProducts;
+                        return filtered.length === 0 ? (
+                          <p className="text-white/50 col-span-full text-center py-4">
+                            This user has no <span className="text-amber-300">{selectedMyProduct?.category}</span> products available
+                          </p>
+                        ) : filtered.map((product) => (
                           <button
                             key={product._id}
-                            onClick={() => setSelectedRecipientProduct(product)}
+                            onClick={() => {
+                              setSelectedRecipientProduct(product);
+                              if (selectedMyProduct && selectedMyProduct.category !== product.category) {
+                                setSelectedMyProduct(null);
+                              }
+                            }}
                             className={`p-3 rounded-xl border transition-all ${
                               selectedRecipientProduct?._id === product._id
                                 ? "border-amber-500 bg-amber-500/20"
@@ -696,9 +728,10 @@ export default function Chat({
                               onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.svg'; }}
                             />
                             <p className="text-xs sm:text-sm text-white truncate">{product.title}</p>
+                            <p className="text-[10px] text-white/40 truncate">{product.category}</p>
                           </button>
-                        ))
-                      )}
+                        ));
+                      })()}
                     </div>
                   </div>
 
