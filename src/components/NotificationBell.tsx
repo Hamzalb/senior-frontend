@@ -10,6 +10,10 @@ import { decideBarter } from "@/lib/notificationService";
 import Link from "next/link";
 import Image from "next/image";
 import { getImageSrc } from "@/lib/getImageSrc";
+import axios from "axios";
+import Cookies from "js-cookie";
+
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "https://dakesh-backend.onrender.com";
 
 interface NotificationBellProps {
   className?: string;
@@ -17,6 +21,8 @@ interface NotificationBellProps {
 
 const NotificationBell: React.FC<NotificationBellProps> = ({ className = "" }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [decidedBarters, setDecidedBarters] = useState<Record<string, 'approved' | 'declined'>>({});
+  const [isDeciding, setIsDeciding] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const mountedRef = useRef(false);
 
@@ -87,22 +93,42 @@ const NotificationBell: React.FC<NotificationBellProps> = ({ className = "" }) =
   const handleDecision = async (
     e: React.MouseEvent,
     barterId: string,
-    decision: "approved" | "declined"
+    decision: "approved" | "declined",
+    senderId: string,
+    notification: Notification
   ) => {
     e.stopPropagation();
     e.preventDefault();
-    
     if (!mountedRef.current) return;
-    
-    try {
-      await decideBarter(barterId, decision);
-      if (mountedRef.current) {
-        await fetchNotifications();
-      }
-    } catch (error) {
-      if (mountedRef.current) {
-        console.error("Error making decision:", error);
-      }
+
+    // Optimistic update — hide buttons immediately
+    setDecidedBarters(prev => ({ ...prev, [barterId]: decision }));
+    setIsDeciding(barterId);
+
+    const content = decision === "approved"
+      ? "Trade request accepted! Both products are now marked as unavailable."
+      : "Trade request declined.";
+    const token = Cookies.get("token");
+
+    await Promise.allSettled([
+      decideBarter(barterId, decision),
+      axios.post(
+        `${API_BASE}/api/messages`,
+        {
+          recipientId: senderId,
+          content,
+          messageType: "trade_request",
+          offeredProductId: (notification.productOfferedId as any)?._id ?? notification.productOfferedId,
+          requestedProductId: (notification.productRequestedId as any)?._id ?? notification.productRequestedId,
+          barterId,
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      ),
+    ]);
+
+    if (mountedRef.current) {
+      setIsDeciding(null);
+      fetchNotifications();
     }
   };
 
@@ -226,36 +252,39 @@ const NotificationBell: React.FC<NotificationBellProps> = ({ className = "" }) =
                         </p>
 
                         {/* Action buttons for barter requests */}
-                        {notification.type === "barter_request" && notification.barterId && (
-                          <div className="flex gap-2 mt-2" onClick={(e) => e.stopPropagation()}>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                e.preventDefault();
-                                const barterId = typeof notification.barterId === 'string' 
-                                  ? notification.barterId 
-                                  : notification.barterId!._id;
-                                handleDecision(e, barterId, "approved");
-                              }}
-                              className="flex-1 px-3 py-1.5 text-xs font-medium bg-green-500/20 text-green-400 rounded-lg hover:bg-green-500/30 transition-colors"
-                            >
-                              Accept
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                e.preventDefault();
-                                const barterId = typeof notification.barterId === 'string' 
-                                  ? notification.barterId 
-                                  : notification.barterId!._id;
-                                handleDecision(e, barterId, "declined");
-                              }}
-                              className="flex-1 px-3 py-1.5 text-xs font-medium bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-colors"
-                            >
-                              Decline
-                            </button>
-                          </div>
-                        )}
+                        {notification.type === "barter_request" && notification.barterId && (() => {
+                          const barterObj = notification.barterId as { _id: string; status: string };
+                          const barterId = String(barterObj._id || notification.barterId);
+                          const senderId = String((notification.sender as any)?._id || notification.sender);
+                          const serverStatus = barterObj.status !== 'pending' ? barterObj.status : undefined;
+                          const decided = decidedBarters[barterId] || serverStatus;
+                          return decided ? (
+                            <div className={`mt-2 text-center text-xs font-semibold py-1 rounded-lg ${
+                              decided === 'approved'
+                                ? 'bg-green-500/15 text-green-400'
+                                : 'bg-red-500/15 text-red-400'
+                            }`}>
+                              {decided === 'approved' ? '✓ Accepted' : '✗ Declined'}
+                            </div>
+                          ) : (
+                            <div className="flex gap-2 mt-2" onClick={(e) => e.stopPropagation()}>
+                              <button
+                                disabled={isDeciding === barterId}
+                                onClick={(e) => handleDecision(e, barterId, "approved", senderId, notification)}
+                                className="flex-1 px-3 py-1.5 text-xs font-medium bg-green-500/20 text-green-400 rounded-lg hover:bg-green-500/30 transition-colors disabled:opacity-50"
+                              >
+                                {isDeciding === barterId ? '...' : 'Accept'}
+                              </button>
+                              <button
+                                disabled={isDeciding === barterId}
+                                onClick={(e) => handleDecision(e, barterId, "declined", senderId, notification)}
+                                className="flex-1 px-3 py-1.5 text-xs font-medium bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-colors disabled:opacity-50"
+                              >
+                                {isDeciding === barterId ? '...' : 'Decline'}
+                              </button>
+                            </div>
+                          );
+                        })()}
 
                         {/* Chat button for barter requests - allows owner to chat with requester */}
                         {notification.type === "barter_request" && notification.sender && (

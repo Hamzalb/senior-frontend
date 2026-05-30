@@ -248,6 +248,19 @@ export default function Chat({
       if (!mountedRef.current) return;
       if (message.sender._id === recipientId || message.recipient._id === recipientId) {
         setMessages((prev) => [...prev, message]);
+
+        // If a decided trade message arrives, update the card status in real-time
+        if (message.messageType === 'trade_request' && message.barterId) {
+          const barterStatus = typeof message.barterId !== 'string'
+            ? (message.barterId as any).status
+            : undefined;
+          const barterIdStr = typeof message.barterId === 'string'
+            ? message.barterId
+            : (message.barterId as any)._id;
+          if (barterStatus && barterStatus !== 'pending') {
+            setDecidedBarters(prev => ({ ...prev, [barterIdStr]: barterStatus }));
+          }
+        }
         
         // Mark as read if we're viewing this conversation
         if (message.sender._id === recipientId && token) {
