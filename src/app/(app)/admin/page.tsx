@@ -1,7 +1,7 @@
 // components/Dashboard.tsx
 "use client";
 
-import { Box, LogOut, Activity, Users, Tag, Home } from "lucide-react";
+import { Box, LogOut, Activity, Users, Tag, Home, Sparkles, TrendingUp, PieChart as PieIcon } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
@@ -10,6 +10,7 @@ import { useEffect, useState } from "react";
 import SectionBackground from "@/components/SectionBackground";
 import {
   BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend,
+  CartesianGrid,
 } from "recharts";
 
 type Barter = {
@@ -24,7 +25,13 @@ type Barter = {
 
 type StatEntry = { status?: string; category?: string; count: number };
 
-const CHART_COLORS = ["#a855f7", "#22c55e", "#ef4444", "#f59e0b", "#3b82f6", "#ec4899", "#14b8a6"];
+const CHART_COLORS = ["#a855f7", "#22d3ee", "#10b981", "#f59e0b", "#3b82f6", "#ec4899", "#14b8a6"];
+const BAR_COLORS  = ["#a855f7", "#8b5cf6", "#7c3aed", "#6d28d9", "#5b21b6", "#4c1d95", "#3b0764"];
+const STATUS_COLORS: Record<string, string> = {
+  Pending:  "#f59e0b",
+  Approved: "#10b981",
+  Declined: "#ef4444",
+};
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE || "https://dakesh-backend.onrender.com";
@@ -289,58 +296,205 @@ export default function Dashboard() {
 
           {/** Charts Section **/}
           <section className="mb-12">
-            <h2 className="text-2xl font-heading font-bold text-white mb-6">
-              Analytics <span className="text-brand-400">Overview</span>
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Bar chart: Products by Category */}
-              <div className="bg-surface-elevated/60 backdrop-blur-xl rounded-2xl p-5 border border-white/[0.08] shadow-xl">
-                <p className="text-sm font-semibold text-white/70 mb-4">Products by Category</p>
-                {productsByCategory.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-8 gap-2">
-                    <p className="text-white/30 text-sm">No category data yet</p>
-                    <p className="text-white/20 text-xs">Products: {stats.products}</p>
-                  </div>
-                ) : (
-                  <ResponsiveContainer width="100%" height={220}>
-                    <BarChart data={productsByCategory} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
-                      <XAxis dataKey="category" tick={{ fill: "#94a3b8", fontSize: 11 }} />
-                      <YAxis tick={{ fill: "#94a3b8", fontSize: 11 }} allowDecimals={false} />
-                      <Tooltip contentStyle={{ background: "#1e1b4b", border: "none", borderRadius: 8, color: "#fff" }} />
-                      <Bar dataKey="count" fill="#a855f7" radius={[4, 4, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                )}
+            {/* Section header */}
+            <div className="flex items-center gap-3 mb-8">
+              <div className="relative">
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-brand-500/30 to-purple-500/20 border border-brand-500/30 flex items-center justify-center">
+                  <Sparkles className="w-5 h-5 text-brand-400" />
+                </div>
+                <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-brand-500 border-2 border-surface animate-pulse" />
               </div>
+              <div>
+                <p className="text-[10px] uppercase tracking-[0.25em] text-brand-400/70 font-semibold mb-0.5">Real-time</p>
+                <h2 className="text-2xl font-black text-white leading-none">
+                  Analytics{" "}
+                  <span className="bg-gradient-to-r from-brand-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent">
+                    Overview
+                  </span>
+                </h2>
+              </div>
+            </div>
 
-              {/* Pie chart: Barter Status — falls back to pending count from stats */}
-              <div className="bg-surface-elevated/60 backdrop-blur-xl rounded-2xl p-5 border border-white/[0.08] shadow-xl">
-                <p className="text-sm font-semibold text-white/70 mb-4">Barter Status Distribution</p>
-                {(() => {
-                  const chartData = bartersByStatus.length > 0
-                    ? bartersByStatus
-                    : stats.barters > 0
-                      ? [{ status: "Pending", count: stats.barters }]
-                      : [];
-                  return chartData.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-8 gap-2">
-                      <p className="text-white/30 text-sm">No barter data yet</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+              {/* ── Bar chart: Products by Category ── */}
+              <div className="relative group overflow-hidden rounded-3xl border border-white/[0.08] bg-white/[0.03] backdrop-blur-xl shadow-2xl">
+                {/* Top accent bar */}
+                <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-brand-500 via-purple-500 to-cyan-500 rounded-t-3xl" />
+                {/* Subtle glow */}
+                <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-48 h-24 bg-brand-500/10 blur-3xl rounded-full pointer-events-none" />
+
+                <div className="p-6">
+                  <div className="flex items-center justify-between mb-5">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-xl bg-brand-500/15 border border-brand-500/20 flex items-center justify-center">
+                        <TrendingUp className="w-4 h-4 text-brand-400" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-white">Products by Category</p>
+                        <p className="text-[10px] text-white/40">{stats.products} total listings</p>
+                      </div>
+                    </div>
+                    <span className="text-[10px] px-2.5 py-1 rounded-full bg-brand-500/10 text-brand-400 border border-brand-500/20 font-semibold">
+                      {productsByCategory.length} categories
+                    </span>
+                  </div>
+
+                  {productsByCategory.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-12 gap-3">
+                      <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center">
+                        <TrendingUp className="w-6 h-6 text-white/20" />
+                      </div>
+                      <p className="text-white/30 text-sm">No data yet</p>
                     </div>
                   ) : (
-                    <ResponsiveContainer width="100%" height={220}>
-                      <PieChart>
-                        <Pie data={chartData} dataKey="count" nameKey="status" cx="50%" cy="50%" outerRadius={80} label={({ status, percent }: any) => `${status} ${((percent ?? 0) * 100).toFixed(0)}%`} labelLine={false}>
-                          {chartData.map((_, index) => (
-                            <Cell key={index} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                    <ResponsiveContainer width="100%" height={210}>
+                      <BarChart data={productsByCategory} margin={{ top: 4, right: 4, left: -24, bottom: 0 }} barCategoryGap="30%">
+                        <defs>
+                          {productsByCategory.map((_, i) => (
+                            <linearGradient key={i} id={`barGrad${i}`} x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="0%" stopColor={BAR_COLORS[i % BAR_COLORS.length]} stopOpacity={1} />
+                              <stop offset="100%" stopColor={BAR_COLORS[i % BAR_COLORS.length]} stopOpacity={0.4} />
+                            </linearGradient>
                           ))}
-                        </Pie>
-                        <Tooltip contentStyle={{ background: "#1e1b4b", border: "none", borderRadius: 8, color: "#fff" }} />
-                        <Legend wrapperStyle={{ fontSize: 12, color: "#94a3b8" }} />
-                      </PieChart>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
+                        <XAxis dataKey="category" tick={{ fill: "#64748b", fontSize: 10 }} axisLine={false} tickLine={false} />
+                        <YAxis tick={{ fill: "#64748b", fontSize: 10 }} axisLine={false} tickLine={false} allowDecimals={false} />
+                        <Tooltip
+                          cursor={{ fill: "rgba(168,85,247,0.06)", radius: 8 }}
+                          contentStyle={{
+                            background: "rgba(15,10,40,0.95)",
+                            border: "1px solid rgba(168,85,247,0.25)",
+                            borderRadius: 12,
+                            color: "#fff",
+                            fontSize: 12,
+                            boxShadow: "0 8px 32px rgba(168,85,247,0.2)",
+                          }}
+                          labelStyle={{ color: "#a855f7", fontWeight: 700, marginBottom: 2 }}
+                        />
+                        <Bar dataKey="count" radius={[6, 6, 0, 0]} maxBarSize={48}>
+                          {productsByCategory.map((_, i) => (
+                            <Cell key={i} fill={`url(#barGrad${i})`} />
+                          ))}
+                        </Bar>
+                      </BarChart>
                     </ResponsiveContainer>
-                  );
-                })()}
+                  )}
+                </div>
               </div>
+
+              {/* ── Donut chart: Barter Status ── */}
+              <div className="relative group overflow-hidden rounded-3xl border border-white/[0.08] bg-white/[0.03] backdrop-blur-xl shadow-2xl">
+                {/* Top accent bar — amber/green/red gradient */}
+                <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-amber-500 via-emerald-500 to-red-500 rounded-t-3xl" />
+                <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-48 h-24 bg-purple-500/10 blur-3xl rounded-full pointer-events-none" />
+
+                <div className="p-6">
+                  <div className="flex items-center justify-between mb-5">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-xl bg-purple-500/15 border border-purple-500/20 flex items-center justify-center">
+                        <PieIcon className="w-4 h-4 text-purple-400" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-white">Barter Status</p>
+                        <p className="text-[10px] text-white/40">Trade request breakdown</p>
+                      </div>
+                    </div>
+                    <span className="text-[10px] px-2.5 py-1 rounded-full bg-purple-500/10 text-purple-400 border border-purple-500/20 font-semibold">
+                      {(bartersByStatus.reduce((s, b) => s + b.count, 0) || stats.barters)} total
+                    </span>
+                  </div>
+
+                  {(() => {
+                    const chartData = bartersByStatus.length > 0
+                      ? bartersByStatus
+                      : stats.barters > 0
+                        ? [{ status: "Pending", count: stats.barters }]
+                        : [];
+                    const total = chartData.reduce((s, b) => s + b.count, 0);
+
+                    return chartData.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center py-12 gap-3">
+                        <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center">
+                          <PieIcon className="w-6 h-6 text-white/20" />
+                        </div>
+                        <p className="text-white/30 text-sm">No barters yet</p>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-4">
+                        {/* Donut */}
+                        <div className="relative flex-shrink-0">
+                          <ResponsiveContainer width={180} height={180}>
+                            <PieChart>
+                              <Pie
+                                data={chartData}
+                                dataKey="count"
+                                nameKey="status"
+                                cx="50%" cy="50%"
+                                innerRadius={58}
+                                outerRadius={82}
+                                paddingAngle={3}
+                                strokeWidth={0}
+                              >
+                                {chartData.map((entry, i) => (
+                                  <Cell
+                                    key={i}
+                                    fill={STATUS_COLORS[entry.status ?? ""] ?? CHART_COLORS[i % CHART_COLORS.length]}
+                                  />
+                                ))}
+                              </Pie>
+                              <Tooltip
+                                contentStyle={{
+                                  background: "rgba(15,10,40,0.95)",
+                                  border: "1px solid rgba(168,85,247,0.25)",
+                                  borderRadius: 12,
+                                  color: "#fff",
+                                  fontSize: 12,
+                                  boxShadow: "0 8px 32px rgba(168,85,247,0.2)",
+                                }}
+                              />
+                            </PieChart>
+                          </ResponsiveContainer>
+                          {/* Center label */}
+                          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                            <span className="text-2xl font-black text-white">{total}</span>
+                            <span className="text-[10px] text-white/40 uppercase tracking-wider">trades</span>
+                          </div>
+                        </div>
+
+                        {/* Legend */}
+                        <div className="flex-1 space-y-3">
+                          {chartData.map((entry, i) => {
+                            const color = STATUS_COLORS[entry.status ?? ""] ?? CHART_COLORS[i % CHART_COLORS.length];
+                            const pct = total > 0 ? ((entry.count / total) * 100).toFixed(0) : "0";
+                            return (
+                              <div key={i} className="flex items-center gap-3">
+                                <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center justify-between mb-1">
+                                    <span className="text-xs font-semibold text-white/80 capitalize">{entry.status}</span>
+                                    <span className="text-xs font-bold" style={{ color }}>{pct}%</span>
+                                  </div>
+                                  {/* Mini progress bar */}
+                                  <div className="h-1 rounded-full bg-white/5 overflow-hidden">
+                                    <div
+                                      className="h-full rounded-full transition-all duration-700"
+                                      style={{ width: `${pct}%`, backgroundColor: color }}
+                                    />
+                                  </div>
+                                </div>
+                                <span className="text-xs text-white/40 flex-shrink-0 w-5 text-right">{entry.count}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+              </div>
+
             </div>
           </section>
 
