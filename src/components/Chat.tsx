@@ -188,25 +188,37 @@ export default function Chat({
   // Accept or decline a trade request
   const handleDecideTrade = async (barterId: string, decision: 'approved' | 'declined') => {
     if (!token || !mountedRef.current) return;
+
+    // Optimistic update — hide buttons immediately so they can't be clicked twice
+    setDecidedBarters(prev => ({ ...prev, [barterId]: decision }));
     setIsDeciding(barterId);
+
     try {
       await axios.put(
         `${API_BASE}/api/barter/${barterId}/decide`,
         { decision },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      if (!mountedRef.current) return;
-      setDecidedBarters(prev => ({ ...prev, [barterId]: decision }));
 
-      const resultContent = decision === 'approved'
+      if (!mountedRef.current) return;
+
+      const content = decision === 'approved'
         ? '✓ Trade request accepted! Both products are now marked as unavailable.'
         : '✗ Trade request declined.';
 
-      const response = await sendMessage({ recipientId, content: resultContent }, token);
+      const res = await axios.post(
+        `${API_BASE}/api/messages`,
+        { recipientId, content },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
       if (!mountedRef.current) return;
-      setMessages(prev => [...prev, response.data]);
-    } catch (err) {
-      console.error('Error deciding trade:', err);
+      if (res.data?.data) {
+        setMessages(prev => [...prev, res.data.data]);
+      }
+    } catch (err: any) {
+      console.error('Error deciding trade:', err?.response?.data || err);
+      // Keep buttons hidden even on error — prevents spam clicking
     } finally {
       if (mountedRef.current) setIsDeciding(null);
     }
@@ -526,28 +538,28 @@ export default function Chat({
                       )}
                       
                       {/* Accept / Decline buttons — shown only to the trade recipient */}
-                      {isTradeRequest && message.barterId && message.recipient?._id === currentUserId && (
-                        decidedBarters[message.barterId] ? (
+                      {isTradeRequest && message.barterId && message.recipient?._id?.toString() === currentUserId && (
+                        decidedBarters[String(message.barterId)] ? (
                           <div className={`mt-2 mb-1 text-center text-xs font-semibold py-1.5 rounded-lg ${
-                            decidedBarters[message.barterId] === 'approved'
+                            decidedBarters[String(message.barterId)] === 'approved'
                               ? 'bg-green-500/15 text-green-400 border border-green-500/30'
                               : 'bg-red-500/15 text-red-400 border border-red-500/30'
                           }`}>
-                            {decidedBarters[message.barterId] === 'approved' ? '✓ Trade Accepted' : '✗ Trade Declined'}
+                            {decidedBarters[String(message.barterId)] === 'approved' ? '✓ Trade Accepted' : '✗ Trade Declined'}
                           </div>
                         ) : (
                           <div className="flex gap-2 mt-2 mb-1">
                             <button
-                              onClick={() => handleDecideTrade(message.barterId!, 'approved')}
-                              disabled={isDeciding === message.barterId}
+                              onClick={() => handleDecideTrade(String(message.barterId), 'approved')}
+                              disabled={isDeciding === String(message.barterId)}
                               className="flex-1 py-1.5 rounded-lg bg-green-500/20 border border-green-500/40 text-green-300 text-xs font-semibold hover:bg-green-500/30 transition-all disabled:opacity-50 flex items-center justify-center gap-1"
                             >
                               <Check className="w-3.5 h-3.5" />
                               {isDeciding === message.barterId ? '...' : 'Accept'}
                             </button>
                             <button
-                              onClick={() => handleDecideTrade(message.barterId!, 'declined')}
-                              disabled={isDeciding === message.barterId}
+                              onClick={() => handleDecideTrade(String(message.barterId), 'declined')}
+                              disabled={isDeciding === String(message.barterId)}
                               className="flex-1 py-1.5 rounded-lg bg-red-500/20 border border-red-500/40 text-red-300 text-xs font-semibold hover:bg-red-500/30 transition-all disabled:opacity-50 flex items-center justify-center gap-1"
                             >
                               <X className="w-3.5 h-3.5" />
