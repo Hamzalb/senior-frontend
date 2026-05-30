@@ -31,6 +31,8 @@ type DecodedToken = {
 const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE || "https://dakesh-backend.onrender.com";
 
+const PAGE_SIZE = 8;
+
 const MyProductsPage = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -38,6 +40,7 @@ const MyProductsPage = () => {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   const handleToggleAvailability = async (product: Product) => {
     setTogglingId(product._id);
@@ -240,7 +243,7 @@ const MyProductsPage = () => {
         {/* Product Grid - Using Premium ProductCard */}
         {!loading && !error && products.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {products.map((product) => (
+            {products.slice(0, visibleCount).map((product) => (
               <div key={product._id} className="flex flex-col gap-2">
                 <ProductCard
                   id={product._id}
@@ -285,6 +288,18 @@ const MyProductsPage = () => {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* Load More */}
+        {!loading && !error && visibleCount < products.length && (
+          <div className="flex justify-center mt-8">
+            <button
+              onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
+              className="px-6 py-2.5 rounded-xl bg-white/5 border border-white/10 text-sm font-semibold text-white/70 hover:bg-brand-500/10 hover:border-brand-500/30 hover:text-brand-300 transition-all duration-200"
+            >
+              Load more ({products.length - visibleCount} remaining)
+            </button>
           </div>
         )}
       </div>
