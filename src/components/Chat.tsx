@@ -40,7 +40,7 @@ export default function Chat({
 }: ChatProps) {
   const mountedRef = useRef(false);
   const token = Cookies.get("token");
-  const { socket, isConnected, isUserOnline, onNewMessage, onTyping, onStopTyping, onMessagesRead, emitTyping, emitStopTyping, emitMarkAsRead } = useSocket();
+  const { socket, isConnected, joinUserRoom, isUserOnline, onNewMessage, onTyping, onStopTyping, onMessagesRead, emitTyping, emitStopTyping, emitMarkAsRead } = useSocket();
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -55,6 +55,13 @@ export default function Chat({
   useEffect(() => {
     mountedRef.current = true;
   }, []);
+
+  // Join user's socket room so real-time messages are received
+  useEffect(() => {
+    if (isConnected && currentUserId) {
+      joinUserRoom(currentUserId);
+    }
+  }, [isConnected, currentUserId, joinUserRoom]);
   
   // Trade request state
   const [showTradeModal, setShowTradeModal] = useState(false);

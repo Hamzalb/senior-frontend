@@ -146,7 +146,7 @@ export default function NotificationsPage() {
 
     const token = Cookies.get("token");
 
-    await Promise.allSettled([
+    const [decideResult, msgResult] = await Promise.allSettled([
       decideBarter(barterId, decision),
       axios.post(
         `${API_BASE}/api/messages`,
@@ -161,6 +161,13 @@ export default function NotificationsPage() {
         { headers: { Authorization: `Bearer ${token}` } }
       ),
     ]);
+
+    if (decideResult.status === 'rejected') {
+      console.error('Decide error:', (decideResult.reason as any)?.response?.data);
+    }
+    if (msgResult.status === 'rejected') {
+      console.error('Message send error:', (msgResult.reason as any)?.response?.data);
+    }
 
     setIsDeciding(null);
     fetchNotificationsData(page);
