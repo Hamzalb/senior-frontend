@@ -504,13 +504,30 @@ export default function Chat({
                       }`}
                     >
                       {/* Trade request header */}
-                      {isTradeRequest && (
-                        <div className="flex items-center gap-2 mb-2 text-amber-400">
-                          <Repeat className="w-4 h-4" />
-                          <span className="text-xs font-semibold">Trade Request</span>
-                        </div>
-                      )}
-                      
+                      {isTradeRequest && (() => {
+                        const barterIdStr = message.barterId
+                          ? (typeof message.barterId === 'string' ? message.barterId : (message.barterId as any)._id)
+                          : undefined;
+                        const barterStatus = message.barterId && typeof message.barterId !== 'string'
+                          ? (message.barterId as any).status
+                          : undefined;
+                        const resolvedStatus = barterIdStr
+                          ? (decidedBarters[barterIdStr] || (barterStatus !== 'pending' ? barterStatus : undefined))
+                          : undefined;
+                        return (
+                          <div className={`flex items-center gap-2 mb-2 ${
+                            resolvedStatus === 'approved' ? 'text-green-400' :
+                            resolvedStatus === 'declined' ? 'text-red-400' : 'text-amber-400'
+                          }`}>
+                            <Repeat className="w-4 h-4" />
+                            <span className="text-xs font-semibold">
+                              {resolvedStatus === 'approved' ? '✓ Trade Accepted' :
+                               resolvedStatus === 'declined' ? '✗ Trade Declined' : 'Trade Request'}
+                            </span>
+                          </div>
+                        );
+                      })()}
+
                       {/* Product images for trade request */}
                       {isTradeRequest && message.offeredProductId && message.requestedProductId && (
                         <div className="flex items-center gap-2 mb-3">
@@ -537,38 +554,41 @@ export default function Chat({
                           </div>
                         </div>
                       )}
-                      
-                      {/* Accept / Decline buttons — shown only to the trade recipient */}
-                      {isTradeRequest && message.barterId && message.recipient?._id?.toString() === currentUserId && (
-                        decidedBarters[String(message.barterId)] ? (
+
+                      {/* Accept / Decline buttons — shown only to the trade recipient, only when pending */}
+                      {isTradeRequest && message.barterId && message.recipient?._id?.toString() === currentUserId && (() => {
+                        const barterIdStr = typeof message.barterId === 'string' ? message.barterId : (message.barterId as any)._id;
+                        const barterStatus = typeof message.barterId !== 'string' ? (message.barterId as any).status : 'pending';
+                        const resolvedDecision = decidedBarters[barterIdStr] || (barterStatus !== 'pending' ? barterStatus : undefined);
+                        return resolvedDecision ? (
                           <div className={`mt-2 mb-1 text-center text-xs font-semibold py-1.5 rounded-lg ${
-                            decidedBarters[String(message.barterId)] === 'approved'
+                            resolvedDecision === 'approved'
                               ? 'bg-green-500/15 text-green-400 border border-green-500/30'
                               : 'bg-red-500/15 text-red-400 border border-red-500/30'
                           }`}>
-                            {decidedBarters[String(message.barterId)] === 'approved' ? '✓ Trade Accepted' : '✗ Trade Declined'}
+                            {resolvedDecision === 'approved' ? '✓ Trade Accepted' : '✗ Trade Declined'}
                           </div>
                         ) : (
                           <div className="flex gap-2 mt-2 mb-1">
                             <button
-                              onClick={() => handleDecideTrade(String(message.barterId), 'approved')}
-                              disabled={isDeciding === String(message.barterId)}
+                              onClick={() => handleDecideTrade(barterIdStr, 'approved')}
+                              disabled={isDeciding === barterIdStr}
                               className="flex-1 py-1.5 rounded-lg bg-green-500/20 border border-green-500/40 text-green-300 text-xs font-semibold hover:bg-green-500/30 transition-all disabled:opacity-50 flex items-center justify-center gap-1"
                             >
                               <Check className="w-3.5 h-3.5" />
-                              {isDeciding === message.barterId ? '...' : 'Accept'}
+                              {isDeciding === barterIdStr ? '...' : 'Accept'}
                             </button>
                             <button
-                              onClick={() => handleDecideTrade(String(message.barterId), 'declined')}
-                              disabled={isDeciding === String(message.barterId)}
+                              onClick={() => handleDecideTrade(barterIdStr, 'declined')}
+                              disabled={isDeciding === barterIdStr}
                               className="flex-1 py-1.5 rounded-lg bg-red-500/20 border border-red-500/40 text-red-300 text-xs font-semibold hover:bg-red-500/30 transition-all disabled:opacity-50 flex items-center justify-center gap-1"
                             >
                               <X className="w-3.5 h-3.5" />
-                              {isDeciding === message.barterId ? '...' : 'Decline'}
+                              {isDeciding === barterIdStr ? '...' : 'Decline'}
                             </button>
                           </div>
-                        )
-                      )}
+                        );
+                      })()}
 
                       {/* Image message */}
                       {hasImage && !isTradeRequest && (
