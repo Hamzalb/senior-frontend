@@ -33,7 +33,7 @@ export interface Message {
     images: string[];
     category: string;
   };
-  barterId?: string;
+  barterId?: string | { _id: string; status: string };
   productId?: string;
   isRead: boolean;
   createdAt: string;

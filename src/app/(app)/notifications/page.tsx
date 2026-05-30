@@ -130,7 +130,8 @@ export default function NotificationsPage() {
     e: React.MouseEvent,
     barterId: string,
     decision: "approved" | "declined",
-    senderId: string
+    senderId: string,
+    notification: Notification
   ) => {
     e.stopPropagation();
     e.preventDefault();
@@ -140,8 +141,8 @@ export default function NotificationsPage() {
     setIsDeciding(barterId);
 
     const content = decision === "approved"
-      ? "✓ Trade request accepted! Both products are now marked as unavailable."
-      : "✗ Trade request declined.";
+      ? "Trade request accepted! Both products are now marked as unavailable."
+      : "Trade request declined.";
 
     const token = Cookies.get("token");
 
@@ -149,7 +150,14 @@ export default function NotificationsPage() {
       decideBarter(barterId, decision),
       axios.post(
         `${API_BASE}/api/messages`,
-        { recipientId: senderId, content },
+        {
+          recipientId: senderId,
+          content,
+          messageType: "trade_request",
+          offeredProductId: (notification.productOfferedId as any)?._id ?? notification.productOfferedId,
+          requestedProductId: (notification.productRequestedId as any)?._id ?? notification.productRequestedId,
+          barterId,
+        },
         { headers: { Authorization: `Bearer ${token}` } }
       ),
     ]);
@@ -414,9 +422,12 @@ export default function NotificationsPage() {
 
                       {/* Action buttons for barter requests */}
                       {notification.type === "barter_request" && notification.barterId && (() => {
-                        const barterId = String(typeof notification.barterId === 'string' ? notification.barterId : notification.barterId!._id);
-                        const senderId = String(notification.sender?._id || notification.sender);
-                        const decided = decidedNotifications[barterId];
+                        const barterObj = notification.barterId as { _id: string; status: string };
+                        const barterId = String(barterObj._id || notification.barterId);
+                        const senderId = String((notification.sender as any)?._id || notification.sender);
+                        // Use server status (persists across sessions) OR optimistic local state
+                        const serverStatus = barterObj.status !== 'pending' ? barterObj.status : undefined;
+                        const decided = decidedNotifications[barterId] || serverStatus;
                         return decided ? (
                           <div className={`mt-3 text-center text-xs font-semibold py-1.5 rounded-lg ${
                             decided === 'approved'
@@ -429,7 +440,7 @@ export default function NotificationsPage() {
                           <div className="flex gap-2 mt-3">
                             <button
                               disabled={isDeciding === barterId}
-                              onClick={(e) => handleDecision(e, barterId, "approved", senderId)}
+                              onClick={(e) => handleDecision(e, barterId, "approved", senderId, notification)}
                               className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium bg-green-500/20 text-green-400 rounded-lg hover:bg-green-500/30 transition-colors disabled:opacity-50"
                             >
                               <Check className="w-4 h-4" />
@@ -437,7 +448,7 @@ export default function NotificationsPage() {
                             </button>
                             <button
                               disabled={isDeciding === barterId}
-                              onClick={(e) => handleDecision(e, barterId, "declined", senderId)}
+                              onClick={(e) => handleDecision(e, barterId, "declined", senderId, notification)}
                               className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-colors disabled:opacity-50"
                             >
                               <X className="w-4 h-4" />
