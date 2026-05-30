@@ -1,10 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
 import Cookies from "js-cookie";
+import Image from "next/image";
+import { Box, Search, Pencil, Trash2, X, Package } from "lucide-react";
 import toast from "react-hot-toast";
-import { X, Pencil } from "lucide-react";
+import { getImageSrc } from "@/lib/getImageSrc";
 
 type Product = {
   _id: string;
@@ -13,61 +16,73 @@ type Product = {
   category: string;
   price?: number;
   isAvailable?: boolean;
+  images?: string[];
   owner: { username: string };
 };
 
-type EditForm = {
-  title: string;
-  description: string;
-  category: string;
-  price: string;
-  isAvailable: boolean;
-};
+type EditForm = { title: string; description: string; category: string; price: string; isAvailable: boolean };
 
 const CATEGORIES = ["Electronics", "Clothing", "Books", "Toys", "Home", "Automobiles", "Other"];
 
-const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE || "https://dakesh-backend.onrender.com";
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "https://dakesh-backend.onrender.com";
 
-export default function AdminProducts() {
-  const [products, setProducts] = useState<Product[]>([]);
+const CATEGORY_GRADIENT: Record<string, { gradient: string; glow: string }> = {
+  electronics:  { gradient: "from-blue-500/20 to-cyan-500/5",    glow: "hover:shadow-blue-500/20"    },
+  clothing:     { gradient: "from-pink-500/20 to-rose-500/5",    glow: "hover:shadow-pink-500/20"    },
+  books:        { gradient: "from-amber-500/20 to-yellow-500/5", glow: "hover:shadow-amber-500/20"   },
+  toys:         { gradient: "from-purple-500/20 to-violet-500/5",glow: "hover:shadow-purple-500/20"  },
+  home:         { gradient: "from-emerald-500/20 to-green-500/5",glow: "hover:shadow-emerald-500/20" },
+  automobiles:  { gradient: "from-orange-500/20 to-amber-500/5", glow: "hover:shadow-orange-500/20"  },
+  other:        { gradient: "from-zinc-500/20 to-slate-500/5",   glow: "hover:shadow-zinc-500/20"    },
+};
+function getGradient(category: string) {
+  return CATEGORY_GRADIENT[category.toLowerCase()] ?? { gradient: "from-brand-500/15 to-purple-500/5", glow: "hover:shadow-brand-500/20" };
+}
+
+const cardVariants = {
+  hidden: { opacity: 0, y: 24, scale: 0.95 },
+  show:   { opacity: 1, y: 0,  scale: 1,  transition: { type: "spring" as const, stiffness: 260, damping: 22 } },
+  exit:   { opacity: 0, scale: 0.9, y: -10, transition: { duration: 0.2 } },
+};
+
+export default function AdminProductsPage() {
+  const [products, setProducts]   = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError]         = useState<string | null>(null);
+  const [search, setSearch]       = useState("");
 
-  const [editProduct, setEditProduct] = useState<Product | null>(null);
-  const [editForm, setEditForm] = useState<EditForm>({ title: "", description: "", category: "", price: "", isAvailable: true });
-  const [editLoading, setEditLoading] = useState(false);
+  const [editProduct, setEditProduct]     = useState<Product | null>(null);
+  const [editForm, setEditForm]           = useState<EditForm>({ title: "", description: "", category: "", price: "", isAvailable: true });
+  const [editLoading, setEditLoading]     = useState(false);
 
-  const token = () => Cookies.get("token");
+  const token = Cookies.get("token");
+  const headers = { Authorization: `Bearer ${token}` };
 
   const fetchProducts = async () => {
+    setIsLoading(true); setError(null);
     try {
-      setIsLoading(true);
-      setError(null);
-      const res = await axios.get(`${API_BASE}/api/admin/products`, {
-        headers: { Authorization: `Bearer ${token()}` },
-      });
+      const res = await axios.get(`${API_BASE}/api/admin/products`, { headers });
       setProducts(res.data?.products ?? res.data ?? []);
-    } catch (err: any) {
-      setError(err.response?.data?.message || "Failed to load products");
-    } finally {
-      setIsLoading(false);
-    }
+    } catch { setError("Failed to load products"); }
+    finally { setIsLoading(false); }
   };
 
   useEffect(() => { fetchProducts(); }, []);
 
-  const handleDelete = async (productId: string) => {
-    if (!confirm("Delete this product permanently?")) return;
+  const filtered = useMemo(() =>
+    products.filter(p =>
+      p.title.toLowerCase().includes(search.toLowerCase()) ||
+      p.category.toLowerCase().includes(search.toLowerCase()) ||
+      (p.owner?.username ?? "").toLowerCase().includes(search.toLowerCase())
+    ), [products, search]);
+
+  const handleDelete = async (productId: string, title: string) => {
+    if (!confirm(`Delete "${title}"?`)) return;
     try {
-      await axios.delete(`${API_BASE}/api/admin/product/${productId}`, {
-        headers: { Authorization: `Bearer ${token()}` },
-      });
-      setProducts(products.filter((p) => p._id !== productId));
-      toast.success("Product deleted successfully!");
-    } catch {
-      toast.error("Failed to delete product.");
-    }
+      await axios.delete(`${API_BASE}/api/admin/product/${productId}`, { headers });
+      setProducts(prev => prev.filter(p => p._id !== productId));
+      toast.success("Product deleted.");
+    } catch { toast.error("Failed to delete product."); }
   };
 
   const openEdit = (product: Product) => {
@@ -86,126 +101,170 @@ export default function AdminProducts() {
     if (!editProduct) return;
     setEditLoading(true);
     try {
-      const payload: any = {
-        title: editForm.title,
-        description: editForm.description,
-        category: editForm.category,
-        isAvailable: editForm.isAvailable,
-      };
+      const payload: any = { title: editForm.title, description: editForm.description, category: editForm.category, isAvailable: editForm.isAvailable };
       if (editForm.price !== "") payload.price = parseFloat(editForm.price);
-
-      const res = await axios.put(`${API_BASE}/api/products/${editProduct._id}`, payload, {
-        headers: { Authorization: `Bearer ${token()}` },
-      });
-      setProducts((prev) => prev.map((p) => p._id === editProduct._id ? { ...p, ...res.data } : p));
+      const res = await axios.put(`${API_BASE}/api/products/${editProduct._id}`, payload, { headers });
+      setProducts(prev => prev.map(p => p._id === editProduct._id ? { ...p, ...res.data } : p));
       setEditProduct(null);
       toast.success("Product updated!");
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || "Failed to update product.");
-    } finally {
-      setEditLoading(false);
-    }
+    } catch (err: any) { toast.error(err.response?.data?.message || "Failed to update."); }
+    finally { setEditLoading(false); }
   };
 
   return (
-    <div className="bg-surface p-4 sm:p-6 shadow-2xl min-h-screen backdrop-blur-xl">
-      <button
-        onClick={() => window.history.back()}
-        className="mb-6 inline-flex items-center gap-2 text-brand-200 hover:text-brand-100 font-semibold text-sm transition-all duration-300 ease-out"
-      >
-        ← Go Back
-      </button>
+    <div className="min-h-screen bg-surface overflow-hidden">
+      {/* Background glow */}
+      <div className="fixed inset-0 pointer-events-none">
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-brand-600/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-1/4 right-0 w-80 h-80 bg-purple-600/8 rounded-full blur-3xl" />
+      </div>
 
-      <h2 className="text-3xl font-bold text-brand-500 mb-8 drop-shadow-sm">Products</h2>
+      <div className="relative px-6 py-8 max-w-5xl mx-auto">
+        <button onClick={() => window.history.back()} className="mb-10 flex items-center gap-2 text-white/40 hover:text-white/80 text-sm transition-colors">
+          ← Back to Admin
+        </button>
 
-      {error && (
-        <div className="mb-6 p-4 bg-red-500/20 border border-red-500/50 rounded-lg text-red-200">
-          <p className="font-semibold">Error: {error}</p>
-          <button onClick={fetchProducts} className="mt-2 text-sm px-3 py-1 bg-red-500/30 hover:bg-red-500/40 rounded transition">Retry</button>
-        </div>
-      )}
-
-      {isLoading && !error && <div className="text-center py-12 text-slate-300"><p>Loading products...</p></div>}
-      {!isLoading && !error && products.length === 0 && <div className="text-center py-12 text-slate-400"><p>No products found</p></div>}
-
-      {!isLoading && products.length > 0 && (
-        <div className="overflow-x-auto rounded-xl shadow-lg bg-white/5 backdrop-blur-md border border-white/10">
-          <table className="min-w-full text-left text-slate-100 text-sm">
-            <thead className="bg-white/10 border-b border-white/10">
-              <tr>
-                <th className="px-6 py-3 uppercase text-xs font-semibold tracking-wide text-brand-200">Title</th>
-                <th className="hidden sm:table-cell px-6 py-3 uppercase text-xs font-semibold tracking-wide text-brand-200">Category</th>
-                <th className="hidden md:table-cell px-6 py-3 uppercase text-xs font-semibold tracking-wide text-brand-200">Owner</th>
-                <th className="px-6 py-3 uppercase text-xs font-semibold tracking-wide text-brand-200">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {products.map((product, idx) => (
-                <tr key={product._id} className={`border-t border-white/10 transition ${idx % 2 === 0 ? "bg-white/5" : "bg-white/0"} hover:bg-white/10`}>
-                  <td className="px-6 py-4 text-white">{product.title}</td>
-                  <td className="hidden sm:table-cell px-6 py-4 text-brand-200">{product.category}</td>
-                  <td className="hidden md:table-cell px-6 py-4 text-brand-200">{product.owner?.username || "N/A"}</td>
-                  <td className="px-6 py-4 flex items-center gap-2">
-                    <button
-                      onClick={() => openEdit(product)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand-500/20 hover:bg-brand-500/30 text-brand-300 text-sm font-semibold transition"
-                    >
-                      <Pencil className="w-3.5 h-3.5" /> Edit
-                    </button>
-                    <button
-                      onClick={() => handleDelete(product._id)}
-                      className="px-4 py-1.5 rounded-lg bg-red-600/80 hover:bg-red-500 text-white text-sm transition shadow-md"
-                    >
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {/* Edit Modal */}
-      {editProduct && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="w-full max-w-md bg-surface-elevated border border-white/10 rounded-2xl p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-bold text-white">Edit Product</h3>
-              <button onClick={() => setEditProduct(null)} className="text-slate-400 hover:text-white transition">
-                <X className="w-5 h-5" />
-              </button>
+        {/* Header */}
+        <div className="mb-10">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-10 h-10 rounded-2xl bg-brand-500/20 border border-brand-500/30 flex items-center justify-center">
+              <Box className="w-5 h-5 text-brand-400" />
             </div>
-            <form onSubmit={handleEditSubmit} className="space-y-4">
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-slate-200">Title</label>
-                <input type="text" value={editForm.title} onChange={(e) => setEditForm({ ...editForm, title: e.target.value })} required className="w-full rounded-xl bg-white/10 border border-white/15 text-white px-4 py-2.5 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/50 transition-all" />
-              </div>
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-slate-200">Description</label>
-                <textarea value={editForm.description} onChange={(e) => setEditForm({ ...editForm, description: e.target.value })} rows={3} className="w-full rounded-xl bg-white/10 border border-white/15 text-white px-4 py-2.5 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/50 transition-all resize-none" />
-              </div>
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-slate-200">Category</label>
-                <select value={editForm.category} onChange={(e) => setEditForm({ ...editForm, category: e.target.value })} className="w-full rounded-xl bg-white/10 border border-white/15 text-white px-4 py-2.5 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/50 transition-all">
-                  {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
-                </select>
-              </div>
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-slate-200">Price (optional)</label>
-                <input type="number" min="0" step="0.01" value={editForm.price} onChange={(e) => setEditForm({ ...editForm, price: e.target.value })} placeholder="Leave blank if free" className="w-full rounded-xl bg-white/10 border border-white/15 text-white px-4 py-2.5 placeholder:text-slate-400/70 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/50 transition-all" />
-              </div>
-              <label className="flex items-center gap-3 cursor-pointer">
-                <input type="checkbox" checked={editForm.isAvailable} onChange={(e) => setEditForm({ ...editForm, isAvailable: e.target.checked })} className="w-4 h-4 accent-brand-500" />
-                <span className="text-sm font-medium text-slate-200">Available for swap</span>
-              </label>
-              <button type="submit" disabled={editLoading} className="w-full py-2.5 rounded-xl font-semibold bg-brand-500 hover:bg-brand-400 text-white transition disabled:opacity-50">
-                {editLoading ? "Saving..." : "Save Changes"}
-              </button>
-            </form>
+            <p className="text-xs uppercase tracking-[0.2em] text-brand-400/80 font-semibold">Admin · Products</p>
+          </div>
+          <h1 className="text-4xl sm:text-5xl font-black text-white mb-2 leading-tight">
+            Manage<br />
+            <span className="bg-gradient-to-r from-brand-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent">Listings</span>
+          </h1>
+          <div className="flex gap-3 mt-4 flex-wrap">
+            <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-4 py-1.5">
+              <span className="w-2 h-2 rounded-full bg-brand-400 animate-pulse" />
+              <span className="text-white/70 text-xs font-medium">{products.length} Products</span>
+            </div>
+            <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-4 py-1.5">
+              <span className="w-2 h-2 rounded-full bg-emerald-400" />
+              <span className="text-white/70 text-xs font-medium">{products.filter(p => p.isAvailable).length} Available</span>
+            </div>
           </div>
         </div>
-      )}
+
+        {/* Search */}
+        <div className="mb-8">
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+            <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by title, category or owner…"
+              className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-white text-sm placeholder-white/25 focus:outline-none focus:border-brand-500/60 transition-colors" />
+          </div>
+        </div>
+
+        {/* Grid */}
+        {isLoading ? (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {[...Array(8)].map((_, i) => <div key={i} className="h-44 rounded-2xl bg-white/5 border border-white/10 animate-pulse" />)}
+          </div>
+        ) : error ? (
+          <p className="text-center text-red-400 py-16">{error}</p>
+        ) : filtered.length === 0 ? (
+          <div className="text-center py-20 text-white/30 text-sm">No products match "{search}"</div>
+        ) : (
+          <motion.div variants={{ hidden: {}, show: { transition: { staggerChildren: 0.05 } } }} initial="hidden" animate="show"
+            className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            <AnimatePresence mode="popLayout">
+              {filtered.map((product) => {
+                const { gradient, glow } = getGradient(product.category);
+                return (
+                  <motion.div key={product._id} variants={cardVariants} layout exit="exit"
+                    className={`group relative overflow-hidden bg-gradient-to-br ${gradient} backdrop-blur-md border border-white/10 hover:border-white/20 rounded-2xl transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl ${glow}`}>
+                    <div className="absolute inset-0 opacity-0 group-hover:opacity-100 bg-gradient-to-tr from-white/5 via-transparent to-transparent transition-opacity duration-500 pointer-events-none rounded-2xl" />
+
+                    <div className="p-3">
+                      {/* Thumbnail */}
+                      <div className="relative w-full aspect-square rounded-xl overflow-hidden mb-3 bg-white/5">
+                        {product.images?.[0] ? (
+                          <Image src={getImageSrc(product.images[0])} alt={product.title} fill className="object-cover" />
+                        ) : (
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <Package className="w-8 h-8 text-white/15" />
+                          </div>
+                        )}
+                        {/* Availability badge */}
+                        <div className={`absolute top-2 right-2 px-2 py-0.5 rounded-full text-[10px] font-bold ${product.isAvailable ? "bg-emerald-500/80 text-white" : "bg-red-500/80 text-white"}`}>
+                          {product.isAvailable ? "Live" : "Off"}
+                        </div>
+                      </div>
+
+                      <p className="text-white font-bold text-sm truncate mb-0.5">{product.title}</p>
+                      <p className="text-white/40 text-[11px] truncate mb-0.5">{product.category}</p>
+                      <p className="text-brand-400 text-[11px] truncate">@{product.owner?.username}</p>
+
+                      {/* Actions — appear on hover */}
+                      <div className="flex gap-1.5 mt-3 opacity-0 group-hover:opacity-100 translate-y-1 group-hover:translate-y-0 transition-all duration-200">
+                        <button onClick={() => openEdit(product)}
+                          className="flex-1 py-1.5 rounded-xl bg-white/8 hover:bg-white/15 border border-white/10 text-white/50 hover:text-white text-xs flex items-center justify-center gap-1 transition-all">
+                          <Pencil className="w-3 h-3" /> Edit
+                        </button>
+                        <button onClick={() => handleDelete(product._id, product.title)}
+                          className="flex-1 py-1.5 rounded-xl bg-red-500/15 hover:bg-red-500/35 border border-red-500/20 text-red-400 hover:text-red-300 text-xs flex items-center justify-center gap-1 transition-all">
+                          <Trash2 className="w-3 h-3" /> Delete
+                        </button>
+                      </div>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
+          </motion.div>
+        )}
+      </div>
+
+      {/* Edit Product Modal */}
+      <AnimatePresence>
+        {editProduct && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+              className="w-full max-w-md bg-surface-elevated border border-white/10 rounded-2xl p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-bold text-white">Edit Product</h3>
+                <button onClick={() => setEditProduct(null)} className="text-slate-400 hover:text-white transition"><X className="w-5 h-5" /></button>
+              </div>
+              <form onSubmit={handleEditSubmit} className="space-y-4">
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-slate-200">Title</label>
+                  <input type="text" value={editForm.title} onChange={e => setEditForm({ ...editForm, title: e.target.value })} required
+                    className="w-full rounded-xl bg-white/10 border border-white/15 text-white px-4 py-2.5 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/50 transition-all" />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-slate-200">Description</label>
+                  <textarea value={editForm.description} onChange={e => setEditForm({ ...editForm, description: e.target.value })} rows={3}
+                    className="w-full rounded-xl bg-white/10 border border-white/15 text-white px-4 py-2.5 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/50 transition-all resize-none" />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-slate-200">Category</label>
+                  <select value={editForm.category} onChange={e => setEditForm({ ...editForm, category: e.target.value })}
+                    className="w-full rounded-xl bg-white/10 border border-white/15 text-white px-4 py-2.5 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/50 transition-all">
+                    {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-slate-200">Price (optional)</label>
+                  <input type="number" min="0" step="0.01" value={editForm.price} onChange={e => setEditForm({ ...editForm, price: e.target.value })}
+                    placeholder="Leave blank if free"
+                    className="w-full rounded-xl bg-white/10 border border-white/15 text-white px-4 py-2.5 placeholder:text-slate-400/70 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/50 transition-all" />
+                </div>
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input type="checkbox" checked={editForm.isAvailable} onChange={e => setEditForm({ ...editForm, isAvailable: e.target.checked })} className="w-4 h-4 accent-brand-500" />
+                  <span className="text-sm font-medium text-slate-200">Available for swap</span>
+                </label>
+                <button type="submit" disabled={editLoading}
+                  className="w-full py-2.5 rounded-xl font-semibold bg-gradient-to-r from-brand-600 to-brand-400 hover:from-brand-500 hover:to-brand-300 text-white transition disabled:opacity-50">
+                  {editLoading ? "Saving…" : "Save Changes"}
+                </button>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
