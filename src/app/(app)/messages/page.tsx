@@ -134,7 +134,7 @@ function MessagesContent() {
       try {
         const response = await getAllUsers(token, { search: userSearchQuery || undefined });
         if (mountedRef.current) {
-          setAllUsers(response.data);
+          setAllUsers(Array.isArray(response.data) ? response.data : []);
         }
       } catch (error) {
         console.error("Error fetching users:", error);

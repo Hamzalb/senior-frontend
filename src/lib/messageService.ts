@@ -228,5 +228,11 @@ export const getAllUsers = async (
       },
     }
   );
-  return response.data;
+
+  const body = response.data;
+  // Handle both { data: [...] } wrapper format and raw array format
+  if (Array.isArray(body)) {
+    return { message: "ok", data: body, pagination: { page: 1, limit: body.length, total: body.length, pages: 1 } };
+  }
+  return body;
 };
