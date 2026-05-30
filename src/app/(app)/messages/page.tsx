@@ -763,12 +763,12 @@ function MessagesContent() {
 
         {/* Desktop view (md and up) */}
         <div className="hidden md:block">
-          <DesktopView />
+          {desktopView}
         </div>
 
         {/* Mobile view (below md) */}
         <div className="md:hidden">
-          <MobileView />
+          {mobileView}
         </div>
       </div>
     </section>
