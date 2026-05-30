@@ -270,8 +270,8 @@ function MessagesContent() {
 
   const activeRecipient = getActiveRecipient();
 
-  // Desktop view
-  const DesktopView = () => (
+  // Desktop view (JSX variable, not a component — avoids remount on every render)
+  const desktopView = (
     <div className="flex h-[calc(100dvh-220px)] min-h-[400px] rounded-3xl overflow-hidden bg-white/5 backdrop-blur-xl border border-white/10">
       {/* Sidebar with tabs */}
       <div className="w-full md:w-72 lg:w-80 flex-shrink-0 border-r border-white/10 flex flex-col">
@@ -493,8 +493,8 @@ function MessagesContent() {
     </div>
   );
 
-  // Mobile view
-  const MobileView = () => (
+  // Mobile view (JSX variable, not a component — avoids remount on every render)
+  const mobileView = (
     <div className="h-[calc(100dvh-160px)] min-h-[380px] rounded-3xl overflow-hidden bg-white/5 backdrop-blur-xl border border-white/10">
       <AnimatePresence mode="wait">
         {activeRecipient ? (
