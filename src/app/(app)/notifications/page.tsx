@@ -2,6 +2,8 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import axios from "axios";
+import Cookies from "js-cookie";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Bell,
@@ -26,6 +28,8 @@ import { getImageSrc } from "@/lib/getImageSrc";
 
 type NotificationType = "all" | "barter_request" | "barter_approved" | "barter_declined" | "message";
 type ReadStatus = "all" | "read" | "unread";
+
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "https://dakesh-backend.onrender.com";
 
 export default function NotificationsPage() {
   const {
@@ -117,20 +121,41 @@ export default function NotificationsPage() {
     return date.toLocaleDateString();
   };
 
+  // Track decided notifications to hide buttons immediately
+  const [decidedNotifications, setDecidedNotifications] = useState<Record<string, 'approved' | 'declined'>>({});
+  const [isDeciding, setIsDeciding] = useState<string | null>(null);
+
   // Handle barter decision
   const handleDecision = async (
     e: React.MouseEvent,
     barterId: string,
-    decision: "approved" | "declined"
+    decision: "approved" | "declined",
+    senderId: string
   ) => {
     e.stopPropagation();
     e.preventDefault();
-    try {
-      await decideBarter(barterId, decision);
-      fetchNotificationsData(page);
-    } catch (error) {
-      console.error("Error making decision:", error);
-    }
+
+    // Optimistic update — hide buttons immediately
+    setDecidedNotifications(prev => ({ ...prev, [barterId]: decision }));
+    setIsDeciding(barterId);
+
+    const content = decision === "approved"
+      ? "✓ Trade request accepted! Both products are now marked as unavailable."
+      : "✗ Trade request declined.";
+
+    const token = Cookies.get("token");
+
+    await Promise.allSettled([
+      decideBarter(barterId, decision),
+      axios.post(
+        `${API_BASE}/api/messages`,
+        { recipientId: senderId, content },
+        { headers: { Authorization: `Bearer ${token}` } }
+      ),
+    ]);
+
+    setIsDeciding(null);
+    fetchNotificationsData(page);
   };
 
   // Handle select all
@@ -388,38 +413,39 @@ export default function NotificationsPage() {
                       </div>
 
                       {/* Action buttons for barter requests */}
-                      {notification.type === "barter_request" && notification.barterId && (
-                        <div className="flex gap-2 mt-3" onClick={(e) => e.stopPropagation()}>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              e.preventDefault();
-                              const barterId = typeof notification.barterId === 'string' 
-                                ? notification.barterId 
-                                : notification.barterId!._id;
-                              handleDecision(e, barterId, "approved");
-                            }}
-                            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium bg-green-500/20 text-green-400 rounded-lg hover:bg-green-500/30 transition-colors"
-                          >
-                            <Check className="w-4 h-4" />
-                            Accept
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              e.preventDefault();
-                              const barterId = typeof notification.barterId === 'string' 
-                                ? notification.barterId 
-                                : notification.barterId!._id;
-                              handleDecision(e, barterId, "declined");
-                            }}
-                            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-colors"
-                          >
-                            <X className="w-4 h-4" />
-                            Decline
-                          </button>
-                        </div>
-                      )}
+                      {notification.type === "barter_request" && notification.barterId && (() => {
+                        const barterId = String(typeof notification.barterId === 'string' ? notification.barterId : notification.barterId!._id);
+                        const senderId = String(notification.sender?._id || notification.sender);
+                        const decided = decidedNotifications[barterId];
+                        return decided ? (
+                          <div className={`mt-3 text-center text-xs font-semibold py-1.5 rounded-lg ${
+                            decided === 'approved'
+                              ? 'bg-green-500/15 text-green-400 border border-green-500/30'
+                              : 'bg-red-500/15 text-red-400 border border-red-500/30'
+                          }`}>
+                            {decided === 'approved' ? '✓ Trade Accepted' : '✗ Trade Declined'}
+                          </div>
+                        ) : (
+                          <div className="flex gap-2 mt-3">
+                            <button
+                              disabled={isDeciding === barterId}
+                              onClick={(e) => handleDecision(e, barterId, "approved", senderId)}
+                              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium bg-green-500/20 text-green-400 rounded-lg hover:bg-green-500/30 transition-colors disabled:opacity-50"
+                            >
+                              <Check className="w-4 h-4" />
+                              {isDeciding === barterId ? '...' : 'Accept'}
+                            </button>
+                            <button
+                              disabled={isDeciding === barterId}
+                              onClick={(e) => handleDecision(e, barterId, "declined", senderId)}
+                              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-colors disabled:opacity-50"
+                            >
+                              <X className="w-4 h-4" />
+                              {isDeciding === barterId ? '...' : 'Decline'}
+                            </button>
+                          </div>
+                        );
+                      })()}
 
                       {/* Chat links */}
                       {notification.sender && (
