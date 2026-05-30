@@ -43,7 +43,7 @@ export default function PublicProfilePage() {
       setError(null);
       try {
         const token = Cookies.get("token");
-        const headers = token ? { Authorization: `Bearer ${token}` } : {};
+        const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
 
         const [userRes, productsRes] = await Promise.all([
           fetch(`${API_BASE}/api/users/${userId}`, { headers }),
