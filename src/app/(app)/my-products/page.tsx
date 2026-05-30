@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import Cookies from "js-cookie";
 import { jwtDecode } from "jwt-decode";
+import Link from "next/link";
+import { Pencil, Trash2 } from "lucide-react";
 import ProductCard, { ProductCardSkeleton } from "@/components/ProductCard";
 
 interface Product {
@@ -33,6 +35,24 @@ const MyProductsPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const handleDelete = async (productId: string) => {
+    if (!confirm("Are you sure you want to delete this product?")) return;
+    setDeletingId(productId);
+    try {
+      const token = Cookies.get("token");
+      await axios.delete(`${API_BASE}/api/products/${productId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setProducts((prev) => prev.filter((p) => p._id !== productId));
+    } catch (err) {
+      console.error("Error deleting product:", err);
+      alert("Failed to delete product. Please try again.");
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   useEffect(() => {
     const fetchAllProductsAndFilter = async () => {
@@ -199,20 +219,38 @@ const MyProductsPage = () => {
         {!loading && !error && products.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {products.map((product) => (
-              <ProductCard
-                key={product._id}
-                id={product._id}
-                title={product.title}
-                description={product.description}
-                images={product.images}
-                category={product.category}
-                owner={product.owner}
-                isAvailable={product.isAvailable}
-                createdAt={product.createdAt}
-                showDescription={true}
-                price={product.price}
-                currentUserId={currentUserId ?? undefined}
-              />
+              <div key={product._id} className="flex flex-col gap-2">
+                <ProductCard
+                  id={product._id}
+                  title={product.title}
+                  description={product.description}
+                  images={product.images}
+                  category={product.category}
+                  owner={product.owner}
+                  isAvailable={product.isAvailable}
+                  createdAt={product.createdAt}
+                  showDescription={true}
+                  price={product.price}
+                  currentUserId={currentUserId ?? undefined}
+                />
+                <div className="flex gap-2">
+                  <Link
+                    href={`/edit-product/${product._id}`}
+                    className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-white/5 border border-white/10 text-sm font-medium text-white/70 hover:bg-brand-500/10 hover:border-brand-500/30 hover:text-brand-300 transition-all duration-200"
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                    Edit
+                  </Link>
+                  <button
+                    onClick={() => handleDelete(product._id)}
+                    disabled={deletingId === product._id}
+                    className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-white/5 border border-white/10 text-sm font-medium text-white/70 hover:bg-red-500/10 hover:border-red-500/30 hover:text-red-400 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    {deletingId === product._id ? "Deleting…" : "Delete"}
+                  </button>
+                </div>
+              </div>
             ))}
           </div>
         )}
