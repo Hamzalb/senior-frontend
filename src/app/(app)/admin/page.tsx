@@ -1,7 +1,7 @@
 // components/Dashboard.tsx
 "use client";
 
-import { Box, LogOut, Activity, Users, Tag } from "lucide-react";
+import { Box, LogOut, Activity, Users, Tag, Home } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
@@ -126,12 +126,17 @@ export default function Dashboard() {
             <span className="text-brand-400 font-semibold">{adminName}</span>
           </div>
         </div>
-        <button
-          onClick={handleLogout}
-          className="flex items-center gap-1 text-red-400 hover:text-red-300 transition-colors duration-200"
-        >
-          <LogOut className="w-5 h-5" />
-        </button>
+        <div className="flex items-center gap-2">
+          <Link href="/" className="flex items-center gap-1 text-brand-400 hover:text-brand-300 transition-colors duration-200">
+            <Home className="w-5 h-5" />
+          </Link>
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-1 text-red-400 hover:text-red-300 transition-colors duration-200"
+          >
+            <LogOut className="w-5 h-5" />
+          </button>
+        </div>
       </header>
 
       {/** Sidebar (hidden on mobile) **/}
