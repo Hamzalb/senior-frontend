@@ -7,7 +7,8 @@ const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE || "https://dakesh-backend.onrender.com";
 
 export default async function CategoryPage({ params }: any) {
-  const categoryName = params.category.charAt(0).toUpperCase() + params.category.slice(1);
+  const { category } = await params;
+  const categoryName = category.charAt(0).toUpperCase() + category.slice(1);
   const res = await fetch(
     `${API_BASE}/api/products?category=${encodeURIComponent(categoryName)}&limit=50`,
     { cache: "no-store" }
@@ -31,7 +32,7 @@ export default async function CategoryPage({ params }: any) {
             Category
           </p>
           <h1 className="text-4xl font-bold text-white capitalize">
-            {params.category}
+            {category}
           </h1>
           {products.length > 0 && (
             <p className="text-slate-400 text-sm mt-2">

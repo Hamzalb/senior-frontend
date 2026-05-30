@@ -288,7 +288,7 @@ export default function Dashboard() {
           </div>
 
           {/** Charts Section **/}
-          <section className="mb-12 hidden md:block">
+          <section className="mb-12">
             <h2 className="text-2xl font-heading font-bold text-white mb-6">
               Analytics <span className="text-brand-400">Overview</span>
             </h2>
@@ -297,7 +297,10 @@ export default function Dashboard() {
               <div className="bg-surface-elevated/60 backdrop-blur-xl rounded-2xl p-5 border border-white/[0.08] shadow-xl">
                 <p className="text-sm font-semibold text-white/70 mb-4">Products by Category</p>
                 {productsByCategory.length === 0 ? (
-                  <p className="text-white/30 text-sm text-center py-8">No data yet</p>
+                  <div className="flex flex-col items-center justify-center py-8 gap-2">
+                    <p className="text-white/30 text-sm">No category data yet</p>
+                    <p className="text-white/20 text-xs">Products: {stats.products}</p>
+                  </div>
                 ) : (
                   <ResponsiveContainer width="100%" height={220}>
                     <BarChart data={productsByCategory} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
@@ -310,24 +313,33 @@ export default function Dashboard() {
                 )}
               </div>
 
-              {/* Pie chart: Barter Status */}
+              {/* Pie chart: Barter Status — falls back to pending count from stats */}
               <div className="bg-surface-elevated/60 backdrop-blur-xl rounded-2xl p-5 border border-white/[0.08] shadow-xl">
                 <p className="text-sm font-semibold text-white/70 mb-4">Barter Status Distribution</p>
-                {bartersByStatus.every((b) => b.count === 0) ? (
-                  <p className="text-white/30 text-sm text-center py-8">No barter data yet</p>
-                ) : (
-                  <ResponsiveContainer width="100%" height={220}>
-                    <PieChart>
-                      <Pie data={bartersByStatus} dataKey="count" nameKey="status" cx="50%" cy="50%" outerRadius={80} label={({ status, percent }) => `${status} ${(percent * 100).toFixed(0)}%`} labelLine={false}>
-                        {bartersByStatus.map((_, index) => (
-                          <Cell key={index} fill={CHART_COLORS[index % CHART_COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip contentStyle={{ background: "#1e1b4b", border: "none", borderRadius: 8, color: "#fff" }} />
-                      <Legend wrapperStyle={{ fontSize: 12, color: "#94a3b8" }} />
-                    </PieChart>
-                  </ResponsiveContainer>
-                )}
+                {(() => {
+                  const chartData = bartersByStatus.length > 0
+                    ? bartersByStatus
+                    : stats.barters > 0
+                      ? [{ status: "Pending", count: stats.barters }]
+                      : [];
+                  return chartData.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-8 gap-2">
+                      <p className="text-white/30 text-sm">No barter data yet</p>
+                    </div>
+                  ) : (
+                    <ResponsiveContainer width="100%" height={220}>
+                      <PieChart>
+                        <Pie data={chartData} dataKey="count" nameKey="status" cx="50%" cy="50%" outerRadius={80} label={({ status, percent }) => `${status} ${(percent * 100).toFixed(0)}%`} labelLine={false}>
+                          {chartData.map((_, index) => (
+                            <Cell key={index} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip contentStyle={{ background: "#1e1b4b", border: "none", borderRadius: 8, color: "#fff" }} />
+                        <Legend wrapperStyle={{ fontSize: 12, color: "#94a3b8" }} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  );
+                })()}
               </div>
             </div>
           </section>
