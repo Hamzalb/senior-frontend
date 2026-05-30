@@ -60,7 +60,7 @@ export default function Products() {
   }, []);
 
   return (
-    <div className="bg-surface p-6 shadow-2xl min-h-screen backdrop-blur-xl">
+    <div className="bg-surface p-4 sm:p-6 shadow-2xl min-h-screen backdrop-blur-xl">
       {/* Go Back Button */}
       <button
         onClick={() => window.history.back()}
@@ -110,10 +110,10 @@ export default function Products() {
               <th className="px-6 py-3 uppercase text-xs font-semibold tracking-wide text-brand-200">
                 Title
               </th>
-              <th className="px-6 py-3 uppercase text-xs font-semibold tracking-wide text-brand-200">
+              <th className="hidden sm:table-cell px-6 py-3 uppercase text-xs font-semibold tracking-wide text-brand-200">
                 Category
               </th>
-              <th className="px-6 py-3 uppercase text-xs font-semibold tracking-wide text-brand-200">
+              <th className="hidden md:table-cell px-6 py-3 uppercase text-xs font-semibold tracking-wide text-brand-200">
                 Owner
               </th>
               <th className="px-6 py-3 uppercase text-xs font-semibold tracking-wide text-brand-200">
@@ -133,10 +133,10 @@ export default function Products() {
             `}
               >
                 <td className="px-6 py-4 text-white">{product.title}</td>
-                <td className="px-6 py-4 text-brand-200">
+                <td className="hidden sm:table-cell px-6 py-4 text-brand-200">
                   {product.category}
                 </td>
-                <td className="px-6 py-4 text-brand-200">
+                <td className="hidden md:table-cell px-6 py-4 text-brand-200">
                   {product.owner?.username || "N/A"}
                 </td>
 

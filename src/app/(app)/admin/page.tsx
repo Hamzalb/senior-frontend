@@ -8,6 +8,9 @@ import Cookies from "js-cookie";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEffect, useState } from "react";
 import SectionBackground from "@/components/SectionBackground";
+import {
+  BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend,
+} from "recharts";
 
 type Barter = {
   _id: string;
@@ -18,6 +21,10 @@ type Barter = {
   status: "pending" | "approved" | "declined" | string;
   createdAt: string;
 };
+
+type StatEntry = { status?: string; category?: string; count: number };
+
+const CHART_COLORS = ["#a855f7", "#22c55e", "#ef4444", "#f59e0b", "#3b82f6", "#ec4899", "#14b8a6"];
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE || "https://dakesh-backend.onrender.com";
@@ -31,6 +38,8 @@ export default function Dashboard() {
     products: 0,
     barters: 0,
   });
+  const [bartersByStatus, setBartersByStatus] = useState<StatEntry[]>([]);
+  const [productsByCategory, setProductsByCategory] = useState<StatEntry[]>([]);
   const [barters, setBarters] = useState<Barter[]>([]);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
 
@@ -63,6 +72,8 @@ export default function Dashboard() {
           products: data.products,
           barters: data.barters,
         });
+        if (data.bartersByStatus) setBartersByStatus(data.bartersByStatus);
+        if (data.productsByCategory) setProductsByCategory(data.productsByCategory);
       } catch (err) {
         console.error("Error fetching stats", err);
       }
@@ -275,6 +286,51 @@ export default function Dashboard() {
               </span>
             </div>
           </div>
+
+          {/** Charts Section **/}
+          <section className="mb-12 hidden md:block">
+            <h2 className="text-2xl font-heading font-bold text-white mb-6">
+              Analytics <span className="text-brand-400">Overview</span>
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Bar chart: Products by Category */}
+              <div className="bg-surface-elevated/60 backdrop-blur-xl rounded-2xl p-5 border border-white/[0.08] shadow-xl">
+                <p className="text-sm font-semibold text-white/70 mb-4">Products by Category</p>
+                {productsByCategory.length === 0 ? (
+                  <p className="text-white/30 text-sm text-center py-8">No data yet</p>
+                ) : (
+                  <ResponsiveContainer width="100%" height={220}>
+                    <BarChart data={productsByCategory} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+                      <XAxis dataKey="category" tick={{ fill: "#94a3b8", fontSize: 11 }} />
+                      <YAxis tick={{ fill: "#94a3b8", fontSize: 11 }} allowDecimals={false} />
+                      <Tooltip contentStyle={{ background: "#1e1b4b", border: "none", borderRadius: 8, color: "#fff" }} />
+                      <Bar dataKey="count" fill="#a855f7" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                )}
+              </div>
+
+              {/* Pie chart: Barter Status */}
+              <div className="bg-surface-elevated/60 backdrop-blur-xl rounded-2xl p-5 border border-white/[0.08] shadow-xl">
+                <p className="text-sm font-semibold text-white/70 mb-4">Barter Status Distribution</p>
+                {bartersByStatus.every((b) => b.count === 0) ? (
+                  <p className="text-white/30 text-sm text-center py-8">No barter data yet</p>
+                ) : (
+                  <ResponsiveContainer width="100%" height={220}>
+                    <PieChart>
+                      <Pie data={bartersByStatus} dataKey="count" nameKey="status" cx="50%" cy="50%" outerRadius={80} label={({ status, percent }) => `${status} ${(percent * 100).toFixed(0)}%`} labelLine={false}>
+                        {bartersByStatus.map((_, index) => (
+                          <Cell key={index} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip contentStyle={{ background: "#1e1b4b", border: "none", borderRadius: 8, color: "#fff" }} />
+                      <Legend wrapperStyle={{ fontSize: 12, color: "#94a3b8" }} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                )}
+              </div>
+            </div>
+          </section>
 
           {/** Barters Section **/}
           <section className="mb-12">
