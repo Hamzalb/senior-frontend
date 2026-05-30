@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Send, ArrowLeft, User, Loader2, Trash2, Check, CheckCheck, Circle, Repeat, X, Package, Image as ImageIcon } from "lucide-react";
+import Link from "next/link";
 import Cookies from "js-cookie";
 import { useSocket } from "@/hooks/useSocket";
 import { getConversation, sendMessage, sendMessageWithImage, deleteMessage, markMessagesAsRead, type Message } from "@/lib/messageService";
@@ -444,7 +445,7 @@ export default function Chat({
             <ArrowLeft className="w-5 h-5 text-white" />
           </button>
         )}
-        <div className="flex items-center gap-3 flex-1">
+        <Link href={`/profile/${recipientId}`} className="flex items-center gap-3 flex-1 group">
           <div className="relative">
             {recipientAvatar ? (
               <img
@@ -463,7 +464,7 @@ export default function Chat({
             }`} />
           </div>
           <div>
-            <h2 className="font-semibold text-white">{recipientName}</h2>
+            <h2 className="font-semibold text-white group-hover:text-brand-300 transition-colors">{recipientName}</h2>
             <p className="text-xs text-white/50 flex items-center gap-1.5">
               {isRecipientOnline ? (
                 <>
@@ -475,7 +476,7 @@ export default function Chat({
               )}
             </p>
           </div>
-        </div>
+        </Link>
       </div>
 
       {/* Messages */}
