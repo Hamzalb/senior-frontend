@@ -151,6 +151,20 @@ export default function Dashboard() {
           </div>
         </div>
         <nav className="flex flex-col gap-3">
+          <Link href="/" className="group block">
+            <div className="relative overflow-hidden flex items-center gap-4 px-4 py-3.5 rounded-2xl bg-white/5 border border-white/10 hover:bg-brand-500/10 hover:border-brand-500/30 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300">
+              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-r from-brand-500/10 to-transparent pointer-events-none" />
+              <div className="relative w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 bg-brand-500/10 border border-brand-500/20 group-hover:scale-110 transition-all duration-300">
+                <Home className="w-4 h-4 text-brand-400" />
+              </div>
+              <div className="relative flex-1">
+                <p className="text-sm font-semibold text-white/80 group-hover:text-white transition-colors">Go to Home</p>
+                <p className="text-xs text-white/40">Back to the app</p>
+              </div>
+              <span className="relative text-brand-400 opacity-0 group-hover:opacity-100 transition-all duration-300 text-sm">→</span>
+            </div>
+          </Link>
+
           <Link href="/admin/users" className="group block">
             <div className="relative overflow-hidden flex items-center gap-4 px-4 py-3.5 rounded-2xl bg-white/5 border border-white/10 hover:bg-brand-500/10 hover:border-brand-500/30 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300">
               <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-r from-brand-500/10 to-transparent pointer-events-none" />
