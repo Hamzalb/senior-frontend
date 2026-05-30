@@ -146,28 +146,22 @@ export default function NotificationsPage() {
 
     const token = Cookies.get("token");
 
-    const [decideResult, msgResult] = await Promise.allSettled([
-      decideBarter(barterId, decision),
-      axios.post(
-        `${API_BASE}/api/messages`,
-        {
-          recipientId: senderId,
-          content,
-          messageType: "trade_request",
-          offeredProductId: (notification.productOfferedId as any)?._id ?? notification.productOfferedId,
-          requestedProductId: (notification.productRequestedId as any)?._id ?? notification.productRequestedId,
-          barterId,
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
-      ),
-    ]);
-
-    if (decideResult.status === 'rejected') {
-      console.error('Decide error:', (decideResult.reason as any)?.response?.data);
-    }
-    if (msgResult.status === 'rejected') {
-      console.error('Message send error:', (msgResult.reason as any)?.response?.data);
-    }
+    // Sequential: decide FIRST so barter status is updated before message is created
+    await decideBarter(barterId, decision).catch((err: any) =>
+      console.error("Decide error:", err?.response?.data)
+    );
+    await axios.post(
+      `${API_BASE}/api/messages`,
+      {
+        recipientId: senderId,
+        content,
+        messageType: "trade_request",
+        offeredProductId: (notification.productOfferedId as any)?._id ?? notification.productOfferedId,
+        requestedProductId: (notification.productRequestedId as any)?._id ?? notification.productRequestedId,
+        barterId,
+      },
+      { headers: { Authorization: `Bearer ${token}` } }
+    ).catch((err: any) => console.error("Message error:", err?.response?.data));
 
     setIsDeciding(null);
     fetchNotificationsData(page);
