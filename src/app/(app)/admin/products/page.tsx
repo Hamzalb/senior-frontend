@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
 import Cookies from "js-cookie";
 import Image from "next/image";
-import { Box, Search, Pencil, Trash2, X, Package } from "lucide-react";
+import { Box, Search, Pencil, Trash2, X, Package, CheckCircle, XCircle, ArrowRightLeft, LayoutGrid } from "lucide-react";
 import toast from "react-hot-toast";
 import { getImageSrc } from "@/lib/getImageSrc";
 
@@ -45,11 +45,15 @@ const cardVariants = {
   exit:   { opacity: 0, scale: 0.9, y: -10, transition: { duration: 0.2 } },
 };
 
+type StatusFilter = "all" | "available" | "unavailable" | "traded";
+
 export default function AdminProductsPage() {
   const [products, setProducts]   = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError]         = useState<string | null>(null);
   const [search, setSearch]       = useState("");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [tradedCount, setTradedCount]   = useState(0);
 
   const [editProduct, setEditProduct]     = useState<Product | null>(null);
   const [editForm, setEditForm]           = useState<EditForm>({ title: "", description: "", category: "", price: "", isAvailable: true });
@@ -61,20 +65,40 @@ export default function AdminProductsPage() {
   const fetchProducts = async () => {
     setIsLoading(true); setError(null);
     try {
-      const res = await axios.get(`${API_BASE}/api/admin/products`, { headers });
-      setProducts(res.data?.products ?? res.data ?? []);
+      const [prodRes, statsRes] = await Promise.all([
+        axios.get(`${API_BASE}/api/admin/products`, { headers }),
+        axios.get(`${API_BASE}/api/admin/stats`, { headers }).catch(() => null),
+      ]);
+      setProducts(prodRes.data?.products ?? prodRes.data ?? []);
+      if (statsRes?.data?.bartersByStatus) {
+        const approved = statsRes.data.bartersByStatus.find((b: any) => b.status === "Approved");
+        setTradedCount(approved?.count ?? 0);
+      }
     } catch { setError("Failed to load products"); }
     finally { setIsLoading(false); }
   };
 
   useEffect(() => { fetchProducts(); }, []);
 
-  const filtered = useMemo(() =>
-    products.filter(p =>
+  // Computed stats
+  const stats = useMemo(() => ({
+    total:       products.length,
+    available:   products.filter(p => p.isAvailable).length,
+    unavailable: products.filter(p => !p.isAvailable).length,
+  }), [products]);
+
+  const filtered = useMemo(() => {
+    let list = products;
+    if (statusFilter === "available")   list = list.filter(p => p.isAvailable);
+    if (statusFilter === "unavailable") list = list.filter(p => !p.isAvailable);
+    // "traded" uses same unavailable set — traded products are marked unavailable after barter approval
+    if (statusFilter === "traded")      list = list.filter(p => !p.isAvailable);
+    return list.filter(p =>
       p.title.toLowerCase().includes(search.toLowerCase()) ||
       p.category.toLowerCase().includes(search.toLowerCase()) ||
       (p.owner?.username ?? "").toLowerCase().includes(search.toLowerCase())
-    ), [products, search]);
+    );
+  }, [products, search, statusFilter]);
 
   const handleDelete = async (productId: string, title: string) => {
     if (!confirm(`Delete "${title}"?`)) return;
@@ -136,16 +160,65 @@ export default function AdminProductsPage() {
             Manage<br />
             <span className="bg-gradient-to-r from-brand-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent">Listings</span>
           </h1>
-          <div className="flex gap-3 mt-4 flex-wrap">
-            <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-4 py-1.5">
-              <span className="w-2 h-2 rounded-full bg-brand-400 animate-pulse" />
-              <span className="text-white/70 text-xs font-medium">{products.length} Products</span>
-            </div>
-            <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-4 py-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-400" />
-              <span className="text-white/70 text-xs font-medium">{products.filter(p => p.isAvailable).length} Available</span>
-            </div>
-          </div>
+        </div>
+
+        {/* Stats filter cards */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
+          {[
+            {
+              key: "all" as StatusFilter,
+              label: "Total Products",
+              value: stats.total,
+              icon: LayoutGrid,
+              color: "brand",
+              dot: "bg-brand-400",
+              active: "border-brand-500/60 bg-brand-500/10",
+              inactive: "border-white/10 bg-white/5",
+            },
+            {
+              key: "available" as StatusFilter,
+              label: "Ready to Trade",
+              value: stats.available,
+              icon: CheckCircle,
+              color: "emerald",
+              dot: "bg-emerald-400",
+              active: "border-emerald-500/60 bg-emerald-500/10",
+              inactive: "border-white/10 bg-white/5",
+            },
+            {
+              key: "unavailable" as StatusFilter,
+              label: "Unavailable",
+              value: stats.unavailable,
+              icon: XCircle,
+              color: "red",
+              dot: "bg-red-400",
+              active: "border-red-500/60 bg-red-500/10",
+              inactive: "border-white/10 bg-white/5",
+            },
+            {
+              key: "traded" as StatusFilter,
+              label: "Traded",
+              value: tradedCount,
+              icon: ArrowRightLeft,
+              color: "amber",
+              dot: "bg-amber-400",
+              active: "border-amber-500/60 bg-amber-500/10",
+              inactive: "border-white/10 bg-white/5",
+            },
+          ].map(({ key, label, value, icon: Icon, dot, active, inactive }) => (
+            <button
+              key={key}
+              onClick={() => setStatusFilter(key)}
+              className={`relative text-left p-4 rounded-2xl border transition-all duration-200 hover:-translate-y-0.5 ${statusFilter === key ? active : inactive}`}
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <span className={`w-2 h-2 rounded-full ${dot} ${statusFilter === key ? "animate-pulse" : ""}`} />
+                <Icon className="w-3.5 h-3.5 text-white/40" />
+              </div>
+              <p className="text-2xl font-black text-white">{value}</p>
+              <p className="text-white/50 text-xs mt-0.5">{label}</p>
+            </button>
+          ))}
         </div>
 
         {/* Search */}
@@ -165,7 +238,9 @@ export default function AdminProductsPage() {
         ) : error ? (
           <p className="text-center text-red-400 py-16">{error}</p>
         ) : filtered.length === 0 ? (
-          <div className="text-center py-20 text-white/30 text-sm">No products match "{search}"</div>
+          <div className="text-center py-20 text-white/30 text-sm">
+            No products{search ? ` match "${search}"` : ` in this filter`}
+          </div>
         ) : (
           <motion.div variants={{ hidden: {}, show: { transition: { staggerChildren: 0.05 } } }} initial="hidden" animate="show"
             className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -187,9 +262,17 @@ export default function AdminProductsPage() {
                             <Package className="w-8 h-8 text-white/15" />
                           </div>
                         )}
-                        {/* Availability badge */}
-                        <div className={`absolute top-2 right-2 px-2 py-0.5 rounded-full text-[10px] font-bold ${product.isAvailable ? "bg-emerald-500/80 text-white" : "bg-red-500/80 text-white"}`}>
-                          {product.isAvailable ? "Live" : "Off"}
+                        {/* Status badge */}
+                        <div className={`absolute top-2 right-2 px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 ${
+                          product.isAvailable
+                            ? "bg-emerald-500/80 text-white"
+                            : "bg-red-500/80 text-white"
+                        }`}>
+                          {product.isAvailable ? (
+                            <><CheckCircle className="w-2.5 h-2.5" /> Available</>
+                          ) : (
+                            <><XCircle className="w-2.5 h-2.5" /> Unavailable</>
+                          )}
                         </div>
                       </div>
 
