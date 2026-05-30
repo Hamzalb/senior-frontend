@@ -7,9 +7,9 @@ const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE || "https://dakesh-backend.onrender.com";
 
 export default async function CategoryPage({ params }: any) {
-  // fetch your products server-side
+  const categoryName = params.category.charAt(0).toUpperCase() + params.category.slice(1);
   const res = await fetch(
-    `${API_BASE}/api/products?category=${encodeURIComponent(params.category)}&limit=50`,
+    `${API_BASE}/api/products?category=${encodeURIComponent(categoryName)}&limit=50`,
     { cache: "no-store" }
   );
   const data = await res.json();
