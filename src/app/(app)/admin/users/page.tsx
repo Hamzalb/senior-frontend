@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import Cookies from "js-cookie";
 import { X, UserPlus, Pencil } from "lucide-react";
+import toast from "react-hot-toast";
 
 type User = {
   _id: string;
@@ -72,7 +73,7 @@ export default function Users() {
       });
       setUsers(users.filter((u) => u._id !== userId));
     } catch {
-      alert("Failed to delete user.");
+      toast.error("Failed to delete user.");
     }
   };
 

@@ -6,6 +6,7 @@ import Footer from "@/components/Footer";
 import { AuthProvider } from "../contexts/AuthContext";
 import { NotificationProvider } from "../contexts/NotificationContext";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import ToastProvider from "@/components/ToastProvider";
 import { Inter, Space_Grotesk } from "next/font/google";
 
 // Inter - Clean, modern sans-serif for body text
@@ -38,6 +39,7 @@ export default function RootLayout({
         <ErrorBoundary>
           <AuthProvider>
             <NotificationProvider>
+              <ToastProvider />
               <Header />
               {children}
               <Footer />

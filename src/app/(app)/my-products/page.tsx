@@ -4,7 +4,8 @@ import axios from "axios";
 import Cookies from "js-cookie";
 import { jwtDecode } from "jwt-decode";
 import Link from "next/link";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2, ToggleLeft, ToggleRight } from "lucide-react";
+import toast from "react-hot-toast";
 import ProductCard, { ProductCardSkeleton } from "@/components/ProductCard";
 
 interface Product {
@@ -36,6 +37,27 @@ const MyProductsPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
+
+  const handleToggleAvailability = async (product: Product) => {
+    setTogglingId(product._id);
+    try {
+      const token = Cookies.get("token");
+      await axios.put(
+        `${API_BASE}/api/products/${product._id}`,
+        { isAvailable: !product.isAvailable },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setProducts((prev) =>
+        prev.map((p) => p._id === product._id ? { ...p, isAvailable: !p.isAvailable } : p)
+      );
+      toast.success(product.isAvailable ? "Marked as unavailable" : "Marked as available");
+    } catch {
+      toast.error("Failed to update availability.");
+    } finally {
+      setTogglingId(null);
+    }
+  };
 
   const handleDelete = async (productId: string) => {
     if (!confirm("Are you sure you want to delete this product?")) return;
@@ -48,7 +70,7 @@ const MyProductsPage = () => {
       setProducts((prev) => prev.filter((p) => p._id !== productId));
     } catch (err) {
       console.error("Error deleting product:", err);
-      alert("Failed to delete product. Please try again.");
+      toast.error("Failed to delete product. Please try again.");
     } finally {
       setDeletingId(null);
     }
