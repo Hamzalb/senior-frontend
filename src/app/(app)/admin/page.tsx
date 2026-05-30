@@ -329,7 +329,7 @@ export default function Dashboard() {
                   ) : (
                     <ResponsiveContainer width="100%" height={220}>
                       <PieChart>
-                        <Pie data={chartData} dataKey="count" nameKey="status" cx="50%" cy="50%" outerRadius={80} label={({ status, percent }) => `${status} ${(percent * 100).toFixed(0)}%`} labelLine={false}>
+                        <Pie data={chartData} dataKey="count" nameKey="status" cx="50%" cy="50%" outerRadius={80} label={({ status, percent }: any) => `${status} ${((percent ?? 0) * 100).toFixed(0)}%`} labelLine={false}>
                           {chartData.map((_, index) => (
                             <Cell key={index} fill={CHART_COLORS[index % CHART_COLORS.length]} />
                           ))}
