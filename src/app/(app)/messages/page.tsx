@@ -154,7 +154,7 @@ function MessagesContent() {
     if (!userIdFromUrl || isLoading || conversations.length === 0) return;
 
     const existingConversation = conversations.find(
-      (conv) => conv.user._id === userIdFromUrl
+      (conv) => conv.user?._id === userIdFromUrl
     );
 
     if (existingConversation) {
@@ -205,9 +205,9 @@ function MessagesContent() {
     }
   }, [userIdFromUrl, conversations, isLoading, token]);
 
-  // Filter conversations by search query
+  // Filter conversations by search query — also drop any with a missing user (deleted account)
   const filteredConversations = conversations.filter((conv) =>
-    conv.user?.username?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false
+    conv.user && (conv.user.username?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false)
   );
 
   // Handle selecting a user from the all users list
@@ -215,7 +215,7 @@ function MessagesContent() {
     if (!mountedRef.current) return;
 
     const existingConversation = conversations.find(
-      (conv) => conv.user._id === user._id
+      (conv) => conv.user?._id === user._id
     );
 
     if (existingConversation) {
@@ -370,13 +370,13 @@ function MessagesContent() {
                   {/* Existing conversations */}
                   {filteredConversations.map((conversation) => (
                     <motion.button
-                      key={conversation.user._id}
+                      key={conversation.user?._id}
                       onClick={() => {
                         setSelectedConversation(conversation);
                         setNewChatUser(null);
                       }}
                       className={`w-full p-4 flex items-center gap-3 hover:bg-white/5 transition-colors ${
-                        selectedConversation?.user._id === conversation.user._id
+                        selectedConversation?.user?._id === conversation.user?._id
                           ? "bg-white/10"
                           : ""
                       }`}
@@ -428,8 +428,8 @@ function MessagesContent() {
               ) : (
                 allUsers.map((user) => {
                   // Check if this user has an existing conversation
-                  const existingConv = conversations.find(c => c.user._id === user._id);
-                  const isSelected = (selectedConversation?.user._id === user._id) || (newChatUser?._id === user._id);
+                  const existingConv = conversations.find(c => c.user?._id === user?._id);
+                  const isSelected = (selectedConversation?.user?._id === user?._id) || (newChatUser?._id === user._id);
                   
                   return (
                     <motion.button
@@ -617,7 +617,7 @@ function MessagesContent() {
                       {/* Existing conversations */}
                       {filteredConversations.map((conversation) => (
                         <motion.button
-                          key={conversation.user._id}
+                          key={conversation.user?._id}
                           onClick={() => {
                             setSelectedConversation(conversation);
                             setNewChatUser(null);
@@ -671,8 +671,8 @@ function MessagesContent() {
                   ) : (
                     allUsers.map((user) => {
                       // Check if this user has an existing conversation
-                      const existingConv = conversations.find(c => c.user._id === user._id);
-                      const isSelected = (selectedConversation?.user._id === user._id) || (newChatUser?._id === user._id);
+                      const existingConv = conversations.find(c => c.user?._id === user?._id);
+                      const isSelected = (selectedConversation?.user?._id === user?._id) || (newChatUser?._id === user._id);
                       
                       return (
                         <motion.button
