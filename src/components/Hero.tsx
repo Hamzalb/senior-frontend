@@ -67,37 +67,53 @@ const cardVariants = {
   },
 };
 
-// Stats data with enhanced properties
-// Colors match brand palette: brand-500 (#a855f7), brand-400 (#c084fc), brand-700 (#7c3aed)
-const stats = [
-  { 
-    icon: Users, 
-    value: 10000, 
-    displayValue: "10K+",
-    label: "Active Users",
-    progress: 0.85,
-    trend: "+12%",
-    color: "#a855f7" // brand-500
-  },
-  { 
-    icon: Recycle, 
-    value: 25000, 
-    displayValue: "25K+",
-    label: "Items Exchanged",
-    progress: 0.92,
-    trend: "+8%",
-    color: "#c084fc" // brand-400
-  },
-  { 
-    icon: TrendingUp, 
-    value: 98, 
-    displayValue: "98%",
-    label: "Success Rate",
-    progress: 0.98,
-    trend: "Excellent",
-    color: "#7c3aed" // brand-700
-  },
-];
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "https://dakesh-backend.onrender.com";
+
+interface PlatformStats {
+  users: number;
+  approvedBarters: number;
+  totalBarters: number;
+}
+
+function buildStats(data: PlatformStats) {
+  const successRate = data.totalBarters > 0
+    ? Math.round((data.approvedBarters / data.totalBarters) * 100)
+    : 0;
+  const trendLabel = successRate >= 80 ? "Excellent" : successRate >= 50 ? "Good" : "Growing";
+  return [
+    {
+      icon: Users,
+      value: data.users,
+      displayValue: data.users >= 1000 ? `${Math.floor(data.users / 1000)}K+` : `${data.users}`,
+      label: "Active Users",
+      progress: Math.min(data.users / Math.max(data.users * 1.3, 10), 0.92),
+      trend: `${data.users} total`,
+      color: "#a855f7",
+    },
+    {
+      icon: Recycle,
+      value: data.approvedBarters,
+      displayValue: data.approvedBarters >= 1000
+        ? `${Math.floor(data.approvedBarters / 1000)}K+`
+        : `${data.approvedBarters}`,
+      label: "Items Exchanged",
+      progress: Math.min(data.approvedBarters / Math.max(data.approvedBarters * 1.3, 5), 0.92),
+      trend: `${data.totalBarters} trades`,
+      color: "#c084fc",
+    },
+    {
+      icon: TrendingUp,
+      value: successRate,
+      displayValue: `${successRate}%`,
+      label: "Success Rate",
+      progress: successRate / 100,
+      trend: trendLabel,
+      color: "#7c3aed",
+    },
+  ];
+}
+
+const DEFAULT_STATS = buildStats({ users: 0, approvedBarters: 0, totalBarters: 0 });
 
 // Custom hook for number counter animation
 function useCountUp(end: number, duration: number = 2000, isInView: boolean) {
@@ -366,6 +382,7 @@ function StatCard({ icon: Icon, value, displayValue, label, progress, trend, col
 
 export default function Hero() {
   const [isLoaded, setIsLoaded] = useState(false);
+  const [stats, setStats] = useState(DEFAULT_STATS);
   const heroRef = useRef<HTMLDivElement>(null);
   const mountedRef = useRef(false);
 
@@ -393,7 +410,14 @@ export default function Hero() {
   useEffect(() => {
     mountedRef.current = true;
     setIsLoaded(true);
-    
+
+    fetch(`${API_BASE}/api/stats`)
+      .then((r) => r.json())
+      .then((data: PlatformStats) => {
+        if (mountedRef.current) setStats(buildStats(data));
+      })
+      .catch(() => {/* keep defaults on error */});
+
     return () => {
       mountedRef.current = false;
     };

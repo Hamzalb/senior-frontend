@@ -89,48 +89,44 @@ const categoryGradients: Record<string, string> = {
   Other: "from-slate-500 to-gray-400",
 };
 
-const categories = [
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "https://dakesh-backend.onrender.com";
+
+const BASE_CATEGORIES = [
   {
     name: "Electronics",
     description: "Explore the latest gadgets and electronic devices for exchange.",
     imageUrl: "https://i.pinimg.com/736x/44/d2/ad/44d2add5a8454d1eb4d7fed3015abcd8.jpg",
     link: "/categories/electronics",
-    itemCount: 234,
   },
   {
     name: "Clothing",
     description: "Discover stylish clothing and fashion items for every occasion.",
     imageUrl: "https://i.pinimg.com/736x/3d/4d/33/3d4d33650996dc8ff6e0503093627bf0.jpg",
     link: "/categories/clothing",
-    itemCount: 189,
   },
   {
     name: "Books",
     description: "Dive into a world of stories, knowledge, and literary treasures.",
     imageUrl: "https://i.pinimg.com/736x/56/f7/15/56f715fb5e0233a4985911be387bb89b.jpg",
     link: "/categories/books",
-    itemCount: 156,
   },
   {
     name: "Toys",
     description: "Fun and educational toys for children of all ages to enjoy.",
     imageUrl: "https://i.pinimg.com/736x/7b/05/fa/7b05fab78047f0491935e3efcf654776.jpg",
     link: "/categories/toys",
-    itemCount: 98,
   },
   {
     name: "Automobiles",
     description: "Cars, motorcycles, and vehicles for those seeking mobility.",
     imageUrl: "https://i.pinimg.com/736x/3c/11/5f/3c115f879d68db7ac8e32c0f4196e071.jpg",
     link: "/categories/automobiles",
-    itemCount: 45,
   },
   {
     name: "Other",
     description: "Unique and miscellaneous items waiting to be discovered.",
     imageUrl: "https://i.pinimg.com/736x/7c/72/4b/7c724b52594be48660e723177efcb637.jpg",
     link: "/categories/other",
-    itemCount: 312,
   },
 ];
 
@@ -144,6 +140,7 @@ export default function CategoriesSection() {
   const [isLoading, setIsLoading] = useState(true);
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [hoveredCard, setHoveredCard] = useState<string | null>(null);
+  const [itemCounts, setItemCounts] = useState<Record<string, number>>({});
 
   useEffect(() => {
     mountedRef.current = true;
@@ -164,6 +161,18 @@ export default function CategoriesSection() {
       setPrefersReducedMotion(true);
     }
 
+    fetch(`${API_BASE}/api/stats`)
+      .then((r) => r.json())
+      .then((data: { productsByCategory?: { category: string; count: number }[] }) => {
+        if (!mountedRef.current) return;
+        const counts: Record<string, number> = {};
+        (data.productsByCategory ?? []).forEach(({ category, count }) => {
+          counts[category] = count;
+        });
+        setItemCounts(counts);
+      })
+      .catch(() => {/* keep zeros on error */});
+
     const timer = setTimeout(() => {
       if (!mountedRef.current) return;
       setIsLoading(false);
@@ -176,6 +185,10 @@ export default function CategoriesSection() {
     };
   }, []);
 
+  const categories = BASE_CATEGORIES.map((c) => ({
+    ...c,
+    itemCount: itemCounts[c.name] ?? 0,
+  }));
   const displayCategories = categories.slice(0, viewMode === "grid" ? 6 : 4);
 
   return (
