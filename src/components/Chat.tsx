@@ -199,8 +199,8 @@ export default function Chat({
 
     // Run both independently — message must send even if decide call fails
     const [decideResult, msgResult] = await Promise.allSettled([
-      axios.put(
-        `${API_BASE}/api/barter/${barterId}/decide`,
+      axios.patch(
+        `${API_BASE}/api/barter/${barterId}/decision`,
         { decision },
         { headers: { Authorization: `Bearer ${token}` } }
       ),
