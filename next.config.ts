@@ -19,6 +19,7 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "www.pinterest.com" },
       { protocol: "https", hostname: "dakesh-backend.onrender.com" },
       { protocol: "https", hostname: "senior-q9il.onrender.com" },
+      { protocol: "https", hostname: "senior-backend-e4gw.onrender.com" },
       { protocol: "https", hostname: "ujrfdfzipgxnivlyjjso.supabase.co" },
       { protocol: "https", hostname: "hxrhbfrjlhgpimrngalp.supabase.co" },
       { protocol: "http", hostname: "localhost", port: "5001", pathname: "/uploads/**" },
