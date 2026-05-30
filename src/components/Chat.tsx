@@ -189,39 +189,40 @@ export default function Chat({
   const handleDecideTrade = async (barterId: string, decision: 'approved' | 'declined') => {
     if (!token || !mountedRef.current) return;
 
-    // Optimistic update — hide buttons immediately so they can't be clicked twice
+    // Optimistic update — hide buttons immediately
     setDecidedBarters(prev => ({ ...prev, [barterId]: decision }));
     setIsDeciding(barterId);
 
-    try {
-      await axios.put(
+    const content = decision === 'approved'
+      ? '✓ Trade request accepted! Both products are now marked as unavailable.'
+      : '✗ Trade request declined.';
+
+    // Run both independently — message must send even if decide call fails
+    const [decideResult, msgResult] = await Promise.allSettled([
+      axios.put(
         `${API_BASE}/api/barter/${barterId}/decide`,
         { decision },
         { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      if (!mountedRef.current) return;
-
-      const content = decision === 'approved'
-        ? '✓ Trade request accepted! Both products are now marked as unavailable.'
-        : '✗ Trade request declined.';
-
-      const res = await axios.post(
+      ),
+      axios.post(
         `${API_BASE}/api/messages`,
         { recipientId, content },
         { headers: { Authorization: `Bearer ${token}` } }
-      );
+      ),
+    ]);
 
-      if (!mountedRef.current) return;
-      if (res.data?.data) {
-        setMessages(prev => [...prev, res.data.data]);
-      }
-    } catch (err: any) {
-      console.error('Error deciding trade:', err?.response?.data || err);
-      // Keep buttons hidden even on error — prevents spam clicking
-    } finally {
-      if (mountedRef.current) setIsDeciding(null);
+    if (!mountedRef.current) return;
+
+    if (decideResult.status === 'rejected') {
+      console.error('Barter decide error:', (decideResult.reason as any)?.response?.data);
     }
+    if (msgResult.status === 'fulfilled' && msgResult.value.data?.data) {
+      setMessages(prev => [...prev, msgResult.value.data.data]);
+    } else if (msgResult.status === 'rejected') {
+      console.error('Message send error:', (msgResult.reason as any)?.response?.data);
+    }
+
+    if (mountedRef.current) setIsDeciding(null);
   };
 
   // Scroll to bottom when messages change (only within the chat container)
