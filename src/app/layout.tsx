@@ -7,6 +7,7 @@ import { AuthProvider } from "../contexts/AuthContext";
 import { NotificationProvider } from "../contexts/NotificationContext";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import ToastProvider from "@/components/ToastProvider";
+import CustomCursor from "@/components/CustomCursor";
 import { Inter, Space_Grotesk } from "next/font/google";
 
 // Inter - Clean, modern sans-serif for body text
@@ -35,7 +36,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${inter.variable} ${spaceGrotesk.variable}`}>
-      <body className="antialiased bg-surface text-white font-sans overflow-x-hidden">
+      <body className="antialiased bg-surface text-white font-sans overflow-x-hidden cursor-none">
+        <CustomCursor />
         <ErrorBoundary>
           <AuthProvider>
             <NotificationProvider>
