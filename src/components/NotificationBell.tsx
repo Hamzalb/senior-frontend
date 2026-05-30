@@ -110,21 +110,22 @@ const NotificationBell: React.FC<NotificationBellProps> = ({ className = "" }) =
       : "Trade request declined.";
     const token = Cookies.get("token");
 
-    await Promise.allSettled([
-      decideBarter(barterId, decision),
-      axios.post(
-        `${API_BASE}/api/messages`,
-        {
-          recipientId: senderId,
-          content,
-          messageType: "trade_request",
-          offeredProductId: (notification.productOfferedId as any)?._id ?? notification.productOfferedId,
-          requestedProductId: (notification.productRequestedId as any)?._id ?? notification.productRequestedId,
-          barterId,
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
-      ),
-    ]);
+    // Sequential: decide FIRST so barter status is updated before message is created
+    await decideBarter(barterId, decision).catch((err: any) =>
+      console.error("Decide error:", err?.response?.data)
+    );
+    await axios.post(
+      `${API_BASE}/api/messages`,
+      {
+        recipientId: senderId,
+        content,
+        messageType: "trade_request",
+        offeredProductId: (notification.productOfferedId as any)?._id ?? notification.productOfferedId,
+        requestedProductId: (notification.productRequestedId as any)?._id ?? notification.productRequestedId,
+        barterId,
+      },
+      { headers: { Authorization: `Bearer ${token}` } }
+    ).catch((err: any) => console.error("Message error:", err?.response?.data));
 
     if (mountedRef.current) {
       setIsDeciding(null);
