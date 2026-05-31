@@ -6,7 +6,6 @@ import axios from "axios";
 import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 import { getImageSrc } from "@/lib/getImageSrc";
-import { MdEmail } from "react-icons/md";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 type Product = {
@@ -53,14 +52,6 @@ export default function ProductPage() {
     if (product) router.push(`/dakesh?productIdToBarterFor=${product._id}`);
   };
 
-  const getContactOwnerMailto = () => {
-    if (!product) return "#";
-    const subject = encodeURIComponent(`Item Swap Request: ${product.title}`);
-    const body = encodeURIComponent(
-      `Hi ${product.owner?.username || "there"},\n\nI'm interested in swapping for your item "${product.title}".\n\nBest regards`
-    );
-    return `mailto:${product.owner?.email || ""}?subject=${subject}&body=${body}`;
-  };
 
   if (loading) return (
     <div className="min-h-screen bg-surface px-4 pt-20 flex items-center justify-center">
@@ -184,13 +175,6 @@ export default function ProductPage() {
             >
               yalla nbadel
             </button>
-            <a
-              href={getContactOwnerMailto()}
-              className="inline-flex items-center justify-center gap-2 bg-white/10 border border-white/20 text-white px-6 sm:px-8 py-3 rounded-xl font-semibold hover:bg-white/20 hover:shadow-lg hover:-translate-y-[2px] transition-all duration-300"
-            >
-              <MdEmail className="text-xl" />
-              Contact Owner
-            </a>
           </div>
         </div>
       </div>

@@ -83,43 +83,6 @@ function DakeshContent() {
     }
   };
 
-  // Handle contacting the product owner
-  const handleContactOwner = async () => {
-    if (!mountedRef.current) return;
-
-    if (!targetProduct?.owner?._id) {
-      if (mountedRef.current) {
-        setError("Unable to identify product owner.");
-      }
-      return;
-    }
-
-    const token = Cookies.get("token");
-    if (!token) {
-      if (mountedRef.current) {
-        setError("Authentication token missing. Please log in again.");
-      }
-      return;
-    }
-
-    try {
-      if (!mountedRef.current) return;
-
-      setLoading(true);
-      
-      // Navigate to messages with the owner's userId
-      router.push(`/messages?userId=${targetProduct.owner._id}`);
-    } catch (err: any) {
-      console.error("Error navigating to messages:", err);
-      if (mountedRef.current) {
-        setError("Failed to open chat. Please try again.");
-      }
-    } finally {
-      if (mountedRef.current) {
-        setLoading(false);
-      }
-    }
-  };
 
   //
   // --- STEP A: Fetch the target product first (to learn its category) ---
@@ -357,14 +320,6 @@ function DakeshContent() {
                   </p>
                 </div>
               </div>
-              {/* Contact Owner Button */}
-              <button
-                onClick={handleContactOwner}
-                className="flex items-center justify-center gap-2 px-4 py-2 bg-brand-600/30 hover:bg-brand-600/50 border border-brand-400/30 rounded-xl text-brand-200 hover:text-white transition-all text-sm font-medium flex-shrink-0"
-              >
-                <MessageCircle className="w-4 h-4" />
-                Contact Owner
-              </button>
             </div>
           </motion.div>
         )}
