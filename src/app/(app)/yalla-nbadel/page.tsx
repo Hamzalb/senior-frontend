@@ -1,4 +1,4 @@
-// pages/dakesh.tsx
+// pages/yalla-nbadel.tsx
 "use client";
 
 import { useEffect, useState, useRef, Suspense } from "react";
@@ -39,7 +39,7 @@ type BarterData = {
 
 const getLoggedInUsername = () => Cookies.get("username");
 
-function DakeshContent() {
+function YallaNbadelContent() {
   const API_BASE =
     process.env.NEXT_PUBLIC_API_BASE || "https://senior-backend-e4gw.onrender.com";
   const router = useRouter();
@@ -532,10 +532,10 @@ function DakeshContent() {
   );
 }
 
-export default function DakeshPage() {
+export default function YallaNbadelPage() {
   return (
     <Suspense fallback={<div className="text-white min-h-screen bg-surface px-4 py-12 flex items-center justify-center">Loading...</div>}>
-      <DakeshContent />
+      <YallaNbadelContent />
     </Suspense>
   );
 }

@@ -48,8 +48,8 @@ export default function ProductPage() {
     fetchProduct();
   }, [productId]);
 
-  const handleDakesh = () => {
-    if (product) router.push(`/dakesh?productIdToBarterFor=${product._id}`);
+  const handleYallaNbadel = () => {
+    if (product) router.push(`/yalla-nbadel?productIdToBarterFor=${product._id}`);
   };
 
 
@@ -169,7 +169,7 @@ export default function ProductPage() {
 
           <div className="mt-4 flex flex-col sm:flex-row gap-3">
             <button
-              onClick={handleDakesh}
+              onClick={handleYallaNbadel}
               disabled={!product.isAvailable}
               className="inline-flex items-center justify-center bg-gradient-to-r from-brand-500 via-brand-400 to-brand-600 text-white px-6 sm:px-8 py-3 rounded-xl font-semibold hover:opacity-90 hover:shadow-lg hover:-translate-y-[2px] transition-all duration-300 shadow-brand-500/30 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0"
             >

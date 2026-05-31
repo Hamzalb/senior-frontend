@@ -1,4 +1,4 @@
-import WhyUseYallaNbadel from "@/components/WhyUseDakesh";
+import WhyUseYallaNbadel from "@/components/WhyUseYallaNbadel";
 import AboutSection from "../components/About";
 import CategoriesSection from "../components/CategoriesSection";
 import Hero from "../components/Hero";

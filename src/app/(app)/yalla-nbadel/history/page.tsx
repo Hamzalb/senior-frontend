@@ -62,7 +62,7 @@ export default function TradeHistoryPage() {
       <div className="absolute -bottom-32 -right-24 w-80 h-80 bg-brand-500/10 blur-3xl rounded-full" />
 
       <div className="relative max-w-4xl mx-auto">
-        <Link href="/dakesh" className="inline-flex items-center gap-2 text-brand-200 hover:text-brand-100 text-sm font-semibold mb-8 transition-colors">
+        <Link href="/yalla-nbadel" className="inline-flex items-center gap-2 text-brand-200 hover:text-brand-100 text-sm font-semibold mb-8 transition-colors">
           <ArrowLeft className="w-4 h-4" /> Back to yalla nbadel
         </Link>
 
