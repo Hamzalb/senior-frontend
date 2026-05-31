@@ -79,7 +79,7 @@ const benefits = [
   },
 ];
 
-export default function WhyUseDakesh() {
+export default function WhyUseYallaNbadel() {
   const mountedRef = useRef(false);
   const sectionRef = useRef<HTMLElement>(null);
   const isInView = useInView(sectionRef, { once: true, margin: "-100px" });

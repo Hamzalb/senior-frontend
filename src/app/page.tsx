@@ -1,4 +1,4 @@
-import WhyUseDakesh from "@/components/WhyUseDakesh";
+import WhyUseYallaNbadel from "@/components/WhyUseDakesh";
 import AboutSection from "../components/About";
 import CategoriesSection from "../components/CategoriesSection";
 import Hero from "../components/Hero";
@@ -10,7 +10,7 @@ export default function Home() {
     <div>
       <Hero />
       <AboutSection />
-      <WhyUseDakesh />
+      <WhyUseYallaNbadel />
       <HowItWorks />
       <CategoriesSection />
       <ProductGrid />
