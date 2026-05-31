@@ -29,12 +29,15 @@ export default function RegisterPage() {
     });
   };
 
+  const [emailSent, setEmailSent] = useState(false);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     try {
       // 1) Register new user
-      const res = await axios.post(`${API_BASE}/api/auth/register`, formData);
+      await axios.post(`${API_BASE}/api/auth/register`, formData);
+      setEmailSent(true);
       setMessage("Registration successful!");
 
       // 2) Log them in right away
