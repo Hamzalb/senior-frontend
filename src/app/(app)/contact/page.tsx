@@ -21,12 +21,10 @@ const ContactForm = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setStatus("sending");
+  const sendRequest = async () => {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 90000);
     try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 60000);
       const res = await fetch(`${API_BASE}/api/contact`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -35,9 +33,23 @@ const ContactForm = () => {
       });
       clearTimeout(timeout);
       if (!res.ok) throw new Error("Server error");
+      return true;
+    } catch {
+      clearTimeout(timeout);
+      return false;
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setStatus("sending");
+    // Retry once — first request wakes Render, second succeeds
+    let ok = await sendRequest();
+    if (!ok) ok = await sendRequest();
+    if (ok) {
       setStatus("success");
       setFormData({ name: "", email: "", message: "" });
-    } catch (err: any) {
+    } else {
       setStatus("error");
     }
   };
@@ -119,7 +131,7 @@ const ContactForm = () => {
               disabled={status === "sending"}
               className="w-full py-3.5 rounded-lg font-semibold text-slate-950 bg-gradient-to-r from-brand-500 via-brand-400 to-brand-600 hover:shadow-lg hover:shadow-brand-500/35 transition-all duration-300 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              {status === "sending" ? "Sending… (may take 30s)" : "Send Message"}
+              {status === "sending" ? "Sending…" : "Send Message"}
             </button>
           </form>
         )}

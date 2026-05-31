@@ -16,16 +16,19 @@ export default function ForgotPasswordPage() {
     e.preventDefault();
     setStatus("sending");
     setError("");
-    try {
-      await axios.post(`${API_BASE}/api/auth/forgot-password`, { email }, { timeout: 60000 });
-      setStatus("sent");
-    } catch (err: any) {
-      if (axios.isAxiosError(err) && err.code === "ECONNABORTED") {
-        setError("Server is taking too long to respond. Please try again in 30 seconds.");
-      } else {
-        setError(err.response?.data?.message || "Error sending reset email. Check the email address.");
+    // Retry once — first request wakes Render, second succeeds
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      try {
+        await axios.post(`${API_BASE}/api/auth/forgot-password`, { email }, { timeout: 90000 });
+        setStatus("sent");
+        return;
+      } catch (err: any) {
+        const isTimeout = axios.isAxiosError(err) && err.code === "ECONNABORTED";
+        if (isTimeout && attempt === 1) continue; // wake-up timeout → retry
+        setError(err.response?.data?.message || "Error sending reset email. Please try again.");
+        setStatus("error");
+        return;
       }
-      setStatus("error");
     }
   };
 
@@ -91,7 +94,7 @@ export default function ForgotPasswordPage() {
                   disabled={status === "sending"}
                   className="w-full py-3.5 rounded-xl font-semibold bg-gradient-to-r from-brand-500 via-brand-400 to-brand-700 text-slate-950 shadow-lg shadow-brand-500/30 hover:translate-y-[-1px] transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  {status === "sending" ? "Sending… (may take 30s)" : "Send reset link"}
+                  {status === "sending" ? "Sending…" : "Send reset link"}
                 </button>
               </form>
 
