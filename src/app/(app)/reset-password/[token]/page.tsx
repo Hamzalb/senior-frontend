@@ -43,7 +43,7 @@ export default function ResetPasswordPage() {
 
     try {
       const res = await axios.put(
-        `https://dakesh-backend.onrender.com/api/auth/reset-password/${token}`,
+        `https://senior-backend-e4gw.onrender.com/api/auth/reset-password/${token}`,
         { password }
       );
       setMessage(

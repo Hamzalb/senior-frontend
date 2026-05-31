@@ -89,7 +89,7 @@ const categoryGradients: Record<string, string> = {
   Other: "from-slate-500 to-gray-400",
 };
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "https://dakesh-backend.onrender.com";
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "https://senior-backend-e4gw.onrender.com";
 
 const BASE_CATEGORIES = [
   {

@@ -6,7 +6,7 @@ import { io, Socket } from "socket.io-client";
 import Cookies from "js-cookie";
 
 const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE || "https://dakesh-backend.onrender.com";
+  process.env.NEXT_PUBLIC_API_BASE || "https://senior-backend-e4gw.onrender.com";
 
 export const useSocket = () => {
   const [socket, setSocket] = useState<Socket | null>(null);

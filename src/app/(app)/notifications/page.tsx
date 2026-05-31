@@ -29,7 +29,7 @@ import { getImageSrc } from "@/lib/getImageSrc";
 type NotificationType = "all" | "barter_request" | "barter_approved" | "barter_declined" | "message";
 type ReadStatus = "all" | "read" | "unread";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "https://dakesh-backend.onrender.com";
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "https://senior-backend-e4gw.onrender.com";
 
 export default function NotificationsPage() {
   const {

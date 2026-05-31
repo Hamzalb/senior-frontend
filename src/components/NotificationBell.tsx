@@ -13,7 +13,7 @@ import { getImageSrc } from "@/lib/getImageSrc";
 import axios from "axios";
 import Cookies from "js-cookie";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "https://dakesh-backend.onrender.com";
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "https://senior-backend-e4gw.onrender.com";
 
 interface NotificationBellProps {
   className?: string;

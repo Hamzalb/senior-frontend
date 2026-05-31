@@ -4,7 +4,7 @@ import ProductCard from "@/components/ProductCard";
 import Link from "next/link";
 
 const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE || "https://dakesh-backend.onrender.com";
+  process.env.NEXT_PUBLIC_API_BASE || "https://senior-backend-e4gw.onrender.com";
 
 export default async function CategoryPage({ params }: any) {
   const { category } = await params;

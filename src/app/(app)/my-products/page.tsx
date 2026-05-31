@@ -29,7 +29,7 @@ type DecodedToken = {
 };
 
 const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE || "https://dakesh-backend.onrender.com";
+  process.env.NEXT_PUBLIC_API_BASE || "https://senior-backend-e4gw.onrender.com";
 
 const PAGE_SIZE = 8;
 

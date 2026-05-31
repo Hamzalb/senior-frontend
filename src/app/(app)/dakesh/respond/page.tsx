@@ -26,7 +26,7 @@ type Barter = {
 };
 
 function RespondBarterContent() {
-  const API_BASE = "https://dakesh-backend.onrender.com";
+  const API_BASE = "https://senior-backend-e4gw.onrender.com";
   const router = useRouter();
   const searchParams = useSearchParams();
   const barterId = searchParams.get("barterId");

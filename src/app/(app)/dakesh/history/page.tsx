@@ -8,7 +8,7 @@ import Image from "next/image";
 import { ArrowRightLeft, CheckCircle, XCircle, Clock, ArrowLeft } from "lucide-react";
 import { getImageSrc } from "@/lib/getImageSrc";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "https://dakesh-backend.onrender.com";
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "https://senior-backend-e4gw.onrender.com";
 
 type Product = {
   _id: string;

@@ -24,7 +24,7 @@ type EditForm = { title: string; description: string; category: string; price: s
 
 const CATEGORIES = ["Electronics", "Clothing", "Books", "Toys", "Home", "Automobiles", "Other"];
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "https://dakesh-backend.onrender.com";
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "https://senior-backend-e4gw.onrender.com";
 
 const CATEGORY_GRADIENT: Record<string, { gradient: string; glow: string }> = {
   electronics:  { gradient: "from-blue-500/20 to-cyan-500/5",    glow: "hover:shadow-blue-500/20"    },

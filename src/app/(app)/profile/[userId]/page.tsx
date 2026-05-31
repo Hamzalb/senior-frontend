@@ -7,7 +7,7 @@ import Cookies from "js-cookie";
 import { User, ArrowLeft } from "lucide-react";
 import ProductCard, { ProductCardSkeleton } from "@/components/ProductCard";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "https://dakesh-backend.onrender.com";
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "https://senior-backend-e4gw.onrender.com";
 
 type UserInfo = {
   _id: string;

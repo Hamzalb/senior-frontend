@@ -7,7 +7,7 @@ import Cookies from "js-cookie";
 import { Eye, EyeOff } from "lucide-react";
 
 const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE || "https://dakesh-backend.onrender.com";
+  process.env.NEXT_PUBLIC_API_BASE || "https://senior-backend-e4gw.onrender.com";
 
 export default function RegisterPage() {
   const router = useRouter();

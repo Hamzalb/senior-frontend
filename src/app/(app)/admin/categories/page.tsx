@@ -15,7 +15,7 @@ import { getImageSrc } from "@/lib/getImageSrc";
 type Category = { _id: string; name: string; createdAt: string; productCount: number; isDefault: boolean };
 type Product  = { _id: string; title: string; images: string[]; price: number; isAvailable: boolean; owner: { username: string } };
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "https://dakesh-backend.onrender.com";
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "https://senior-backend-e4gw.onrender.com";
 
 const CATEGORY_CONFIG: Record<string, { icon: React.ElementType; gradient: string; glow: string; iconBg: string }> = {
   electronics:  { icon: Cpu,        gradient: "from-blue-500/25 to-cyan-500/5",    glow: "hover:shadow-blue-500/20",    iconBg: "bg-blue-500/20 text-blue-300 border-blue-400/30" },

@@ -41,7 +41,7 @@ const getLoggedInUsername = () => Cookies.get("username");
 
 function DakeshContent() {
   const API_BASE =
-    process.env.NEXT_PUBLIC_API_BASE || "https://dakesh-backend.onrender.com";
+    process.env.NEXT_PUBLIC_API_BASE || "https://senior-backend-e4gw.onrender.com";
   const router = useRouter();
   const searchParams = useSearchParams();
   const productIdToBarterFor = searchParams.get("productIdToBarterFor");

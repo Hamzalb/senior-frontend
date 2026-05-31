@@ -19,7 +19,7 @@ type UserItem = {
 type UserForm = { username: string; email: string; password: string; role: string };
 const EMPTY_FORM: UserForm = { username: "", email: "", password: "", role: "customer" };
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "https://dakesh-backend.onrender.com";
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "https://senior-backend-e4gw.onrender.com";
 
 const cardVariants = {
   hidden: { opacity: 0, y: 24, scale: 0.95 },
