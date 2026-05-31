@@ -21,35 +21,23 @@ const ContactForm = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const sendRequest = async () => {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 90000);
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setStatus("sending");
+
+    // Wake up Render first (free tier sleeps after inactivity)
+    try { await fetch(`${API_BASE}/`); } catch { /* ignore */ }
+
     try {
       const res = await fetch(`${API_BASE}/api/contact`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
-        signal: controller.signal,
       });
-      clearTimeout(timeout);
       if (!res.ok) throw new Error("Server error");
-      return true;
-    } catch {
-      clearTimeout(timeout);
-      return false;
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setStatus("sending");
-    // Retry once — first request wakes Render, second succeeds
-    let ok = await sendRequest();
-    if (!ok) ok = await sendRequest();
-    if (ok) {
       setStatus("success");
       setFormData({ name: "", email: "", message: "" });
-    } else {
+    } catch {
       setStatus("error");
     }
   };

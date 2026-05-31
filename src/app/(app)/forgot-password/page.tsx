@@ -16,19 +16,16 @@ export default function ForgotPasswordPage() {
     e.preventDefault();
     setStatus("sending");
     setError("");
-    // Retry once — first request wakes Render, second succeeds
-    for (let attempt = 1; attempt <= 2; attempt++) {
-      try {
-        await axios.post(`${API_BASE}/api/auth/forgot-password`, { email }, { timeout: 90000 });
-        setStatus("sent");
-        return;
-      } catch (err: any) {
-        const isTimeout = axios.isAxiosError(err) && err.code === "ECONNABORTED";
-        if (isTimeout && attempt === 1) continue; // wake-up timeout → retry
-        setError(err.response?.data?.message || "Error sending reset email. Please try again.");
-        setStatus("error");
-        return;
-      }
+
+    // Wake up Render first (free tier sleeps after inactivity)
+    try { await axios.get(`${API_BASE}/`, { timeout: 60000 }); } catch { /* ignore */ }
+
+    try {
+      await axios.post(`${API_BASE}/api/auth/forgot-password`, { email }, { timeout: 30000 });
+      setStatus("sent");
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Failed to send reset email. Please try again.");
+      setStatus("error");
     }
   };
 
