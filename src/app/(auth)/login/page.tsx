@@ -19,6 +19,7 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [oauthLoading, setOauthLoading] = useState(false);
 
   // Handle Google OAuth redirect — token arrives as a URL param
   useEffect(() => {
@@ -27,6 +28,7 @@ export default function Login() {
     const username = p.get("username");
     const role     = p.get("role");
     if (!token) return;
+    setOauthLoading(true);
     Cookies.set("token",    token,              { expires: 7 });
     Cookies.set("username", username || "",     { expires: 7 });
     Cookies.set("role",     role || "customer", { expires: 7 });
@@ -91,6 +93,15 @@ export default function Login() {
       }
     }
   };
+
+  if (oauthLoading) return (
+    <div className="min-h-screen bg-surface flex items-center justify-center">
+      <div className="text-center space-y-4">
+        <div className="w-10 h-10 border-2 border-brand-500 border-t-transparent rounded-full animate-spin mx-auto" />
+        <p className="text-white/60 text-sm">Signing you in…</p>
+      </div>
+    </div>
+  );
 
   return (
     <div className="relative min-h-screen bg-surface text-slate-50 overflow-hidden">
