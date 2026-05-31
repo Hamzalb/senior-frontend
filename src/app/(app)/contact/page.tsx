@@ -25,15 +25,19 @@ const ContactForm = () => {
     e.preventDefault();
     setStatus("sending");
     try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 60000);
       const res = await fetch(`${API_BASE}/api/contact`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
+        signal: controller.signal,
       });
+      clearTimeout(timeout);
       if (!res.ok) throw new Error("Server error");
       setStatus("success");
       setFormData({ name: "", email: "", message: "" });
-    } catch {
+    } catch (err: any) {
       setStatus("error");
     }
   };
@@ -115,7 +119,7 @@ const ContactForm = () => {
               disabled={status === "sending"}
               className="w-full py-3.5 rounded-lg font-semibold text-slate-950 bg-gradient-to-r from-brand-500 via-brand-400 to-brand-600 hover:shadow-lg hover:shadow-brand-500/35 transition-all duration-300 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              {status === "sending" ? "Sending…" : "Send Message"}
+              {status === "sending" ? "Sending… (may take 30s)" : "Send Message"}
             </button>
           </form>
         )}
