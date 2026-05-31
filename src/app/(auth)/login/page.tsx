@@ -1,7 +1,7 @@
 "use client";
 import { useRouter } from "next/navigation";
 import axios from "axios";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Cookies from "js-cookie";
 import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
@@ -19,6 +19,21 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+
+  // Handle Google OAuth redirect — token arrives as a URL param
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search);
+    const token    = p.get("token");
+    const username = p.get("username");
+    const role     = p.get("role");
+    if (!token) return;
+    Cookies.set("token",    token,              { expires: 7 });
+    Cookies.set("username", username || "",     { expires: 7 });
+    Cookies.set("role",     role || "customer", { expires: 7 });
+    login(token);
+    window.location.href = "/";
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
