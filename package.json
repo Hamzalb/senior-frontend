@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "set NODE_OPTIONS=--max-old-space-size=2048 && next dev --turbo -p 5050",
+    "dev": "set NODE_OPTIONS=--max-old-space-size=2048 && next dev -p 5050",
     "dev:network": "powershell -ExecutionPolicy Bypass -File dev.ps1",
     "build": "next build",
     "start": "next start",
